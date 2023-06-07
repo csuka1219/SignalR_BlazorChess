@@ -1,0 +1,27 @@
+﻿@page "/"
+@using BlazorChess.Pieces;
+
+@*_items.Count(x => x.Identifier == identifier ) == 0)*@
+<MudDropContainer T="Piece" Items="@list" CanDropClass="mud-border-info" NoDropClass="mud-border-error"
+                  CanDrop="@( (item,identifier ) => CanDrop(item,identifier))"
+    ItemsSelector="@((item,dropzone) => item.Position == dropzone)" ItemDropped="ItemUpdated" 
+    Class="border-2 border-solid mud-border-lines-default">
+    <ChildContent>
+        @for (int r = 0; r < 8; r++)
+        {
+            var row = r.ToString();
+                <div class="d-flex">
+                @for (int c = 0; c < 8; c++)
+                {
+                    var col = c.ToString();
+                    <MudDropZone T="Piece" Identifier="@($"{row}{col}")" DraggingClass="mud-theme-success" Class="d-flex justify-center align-center border-2 border-solid docs-gray-bg mud-border-lines-default" Style="height:64px;width:64px;"/>
+                }
+                </div>
+        }
+    </ChildContent>
+    <ItemRenderer>
+        <div class="d-flex justify-center align-center flex-grow-1">
+            <MudIcon Icon="@context.Icon" Color="context.Color==Pieces.Color.White ? MudBlazor.Color.Primary:MudBlazor.Color.Secondary" Size="Size.Large" />
+        </div>
+    </ItemRenderer>
+</MudDropContainer>
