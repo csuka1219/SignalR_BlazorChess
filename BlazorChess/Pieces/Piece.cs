@@ -1,6 +1,4 @@
 ﻿
-using static MudBlazor.CategoryTypes;
-
 namespace BlazorChess.Pieces
 {
     public class Piece
@@ -51,7 +49,7 @@ namespace BlazorChess.Pieces
 
         public (int, int) getPositionTuple()
         {
-            int row = int.Parse(this.Position!.Substring(0, 1));
+            int row = int.Parse(this.Position![..1]);
             int col = int.Parse(this.Position!.Substring(1, 1));
             return (row, col);
         }

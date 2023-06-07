@@ -1,25 +1,18 @@
 ﻿using BlazorChess.Data;
+using BlazorChess.Game;
 using BlazorChess.Pieces;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using MudBlazor.Extensions;
 
 namespace BlazorChess.Pages
 {
     public partial class Index : IDisposable
     {
         [Inject] private IDialogService? DialogService { get; set; }
-        //public enum PiecesId
-        //{
-        //    blackPawn = 1, blackRook1, blackKnight1, blackBishop1, blackQueen, blackKing, blackBishop2, blackKnight2, blackRook2,
-        //    whitePawn = 11, whiteRook1, whiteKnight1, whiteBishop1, whiteQueen, whiteKing, whiteBishop2, whiteKnight2, whiteRook2
-        //}
-                
-        //readonly List<PiecesId> castlePieces = new List<PiecesId>() { PiecesId.blackRook1, PiecesId.blackRook2, PiecesId.blackKing, PiecesId.whiteKing, PiecesId.whiteRook1, PiecesId.whiteRook2 };
 
         bool dragEnded = true;
-        Chessboard chessBoard = new Chessboard();
-        IEnumerable<Piece> list=new List<Piece>();
+        private Chessboard chessBoard = new Chessboard();
+        IEnumerable<Piece> list = new List<Piece>();
         bool[,] availableMoves = new bool[8, 8];
         public bool whiteTurn = true;
         public bool lastTurn = true;
@@ -78,7 +71,7 @@ namespace BlazorChess.Pages
             }
             return false;
         }
-        
+
         private async void ItemUpdated(MudItemDropInfo<Piece> piece)
         {
             int i = piece.Item.Position![0] - '0';
@@ -90,10 +83,10 @@ namespace BlazorChess.Pages
             {
                 list.FirstOrDefault(p => p.Position == piece.DropzoneIdentifier)!.Position = null;
             }
-            chessBoard.setPiece(i,j,piece.Item);
+            chessBoard.SetPiece(i, j, piece.Item);
             dragEnded = true;
             availableMoves = new bool[8, 8];
-            bool checkMate = CheckMate.isCheckMate(chessBoard.board, whiteTurn, false);
+            bool checkMate = CheckMate.isCheckMate(chessBoard.board, whiteTurn);
             whiteTurn = !whiteTurn;
             isStale = Stale.staleChecker(chessBoard.board, whiteTurn);
 
@@ -123,7 +116,7 @@ namespace BlazorChess.Pages
                         chessBoard.board[newRow, newCol] = piece;
                         chessBoard.board[newRow, newCol].setPosition($"{row}{col}", true);
                         chessBoard.board[row, col].setPosition($"{newRow}{newCol}", true);
-                        chessBoard.board[row, col]=new EmptyPiece();
+                        chessBoard.board[row, col] = new EmptyPiece();
                         if (whiteTurn && Stale.staleChecker(chessBoard.board, whiteTurn))
                         {
                             availableMoves[newRow, newCol] = false;
