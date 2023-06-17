@@ -7,7 +7,7 @@ namespace BlazorChess.Data
         public static bool staleChecker(Piece[,] board, bool whiteTurn)
         {
             bool[,] staleArray = new bool[8, 8];
-            string kingPosition = "";
+            int kingRow = -1, kingCol = -1;
             foreach (Piece piece in board)
             {
                 if (piece.Color == Color.White != whiteTurn)
@@ -18,18 +18,16 @@ namespace BlazorChess.Data
                 {
                     if (piece is King)
                     {
-                        kingPosition = piece.Position!;
+                        (kingRow, kingCol) = piece.getPositionTuple();
                     }
                 }
             }
 
-            if (kingPosition == "")
+            if (kingRow == -1)
             {
                 return true;
             }
 
-            int kingRow = int.Parse(kingPosition.Substring(0, 1));
-            int kingCol = int.Parse(kingPosition.Substring(1, 1));
             return staleArray[kingRow, kingCol];
         }
     }

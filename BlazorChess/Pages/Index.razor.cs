@@ -8,7 +8,8 @@ namespace BlazorChess.Pages
 {
     public partial class Index : IDisposable
     {
-        [Inject] private IDialogService? DialogService { get; set; }
+        [Inject] 
+        private IDialogService? DialogService { get; set; }
 
         bool dragEnded = true;
         private Chessboard chessBoard = new Chessboard();
@@ -23,72 +24,66 @@ namespace BlazorChess.Pages
             list = chessBoard.board.Cast<Piece>().ToList();
             //todo connect
         }
-        public bool CanDrop(Piece piece, string s)
+        public bool canDrop(Piece selectedPiece, string s)
         {
-            if (whiteTurn == lastTurn && piece.Position != lastposition && !dragEnded)
-            {
-                availableMoves = new bool[8, 8];
-                dragEnded = true;
-            }
-            if (whiteTurn && piece.PieceValue > PieceConstants.whiteKingValue)
-            {
-                return false;
-            }
-            if (!whiteTurn && piece.PieceValue < PieceConstants.blackPawnValue)
-            {
-                return false;
-            }
-            int i = s[0] - '0';
-            int j = s[1] - '0';
+			if (whiteTurn == lastTurn && selectedPiece.Position != lastposition && !dragEnded)
+			{
+				availableMoves = new bool[8, 8];
+				dragEnded = true;
+			}
+
+			if ((whiteTurn && selectedPiece.PieceValue > PieceConstants.whiteKingValue) || (!whiteTurn && selectedPiece.PieceValue < PieceConstants.blackPawnValue))
+			{
+				return false;
+			}
+
+			int row = s[0] - '0';
+            int col = s[1] - '0';
 
             bool[,] staleArray = new bool[8, 8];
-            foreach (Piece piece2 in chessBoard.board)
+            foreach (Piece piece in chessBoard.board)
             {
-                if (piece2.Color == Pieces.Color.White != whiteTurn)
+                if (piece.Color == Pieces.Color.White != whiteTurn)
                 {
-                    staleArray = piece2.checkForStale(chessBoard.board, staleArray);
+                    staleArray = piece.checkForStale(chessBoard.board, staleArray);
                 }
             }
 
             if (dragEnded)
             {
-                if (piece is King)
+                if (selectedPiece is King)
                 {
-                    availableMoves = piece.calculatePossibleMoves(chessBoard.board, availableMoves, staleArray);
+                    availableMoves = selectedPiece.calculatePossibleMoves(chessBoard.board, availableMoves, staleArray);
                 }
                 else
                 {
-                    availableMoves = piece.calculatePossibleMoves(chessBoard.board, availableMoves);
+                    availableMoves = selectedPiece.calculatePossibleMoves(chessBoard.board, availableMoves);
                 }
                 dragEnded = false;
-                lastposition = piece.Position!;
+                lastposition = selectedPiece.Position!;
                 lastTurn = whiteTurn;
-                RemoveMoveThatNotPossible(piece, i, j);
+                removeInvalidMoves(selectedPiece, row, col);
             }
-            if (availableMoves[i, j] == true)
-            {
-                return true;
-            }
-            return false;
+
+            return availableMoves[row, col];
         }
 
-        private async void ItemUpdated(MudItemDropInfo<Piece> piece)
+        private async void pieceUpdated(MudItemDropInfo<Piece> piece)
         {
-            int i = piece.Item.Position![0] - '0';
-            int j = piece.Item.Position[1] - '0';
-            i = piece.DropzoneIdentifier[0] - '0';
-            j = piece.DropzoneIdentifier[1] - '0';
+            int newRow = piece.DropzoneIdentifier[0] - '0';
+            int newCol = piece.DropzoneIdentifier[1] - '0';
             bool isHittedPiece = list.Any(p => p.PieceValue != piece.Item.PieceValue && p.Position == piece.DropzoneIdentifier);
             if (isHittedPiece)
             {
                 list.FirstOrDefault(p => p.Position == piece.DropzoneIdentifier)!.Position = null;
             }
-            chessBoard.SetPiece(i, j, piece.Item);
+
+            chessBoard.SetPiece(newRow, newCol, piece.Item);
             dragEnded = true;
             availableMoves = new bool[8, 8];
             bool checkMate = CheckMate.isCheckMate(chessBoard.board, whiteTurn);
             whiteTurn = !whiteTurn;
-            isStale = Stale.staleChecker(chessBoard.board, whiteTurn);
+            isStale = checkMate || Stale.staleChecker(chessBoard.board, whiteTurn);
 
             if (checkMate)
             {
@@ -103,7 +98,7 @@ namespace BlazorChess.Pages
                 }
             }
         }
-        public void RemoveMoveThatNotPossible(Piece piece, int row, int col)
+        public void removeInvalidMoves(Piece piece, int row, int col)
         {
             for (int newRow = 0; newRow < 8; newRow++)
             {
@@ -117,6 +112,7 @@ namespace BlazorChess.Pages
                         chessBoard.board[newRow, newCol].setPosition($"{row}{col}", true);
                         chessBoard.board[row, col].setPosition($"{newRow}{newCol}", true);
                         chessBoard.board[row, col] = new EmptyPiece();
+
                         if (whiteTurn && Stale.staleChecker(chessBoard.board, whiteTurn))
                         {
                             availableMoves[newRow, newCol] = false;
@@ -125,6 +121,7 @@ namespace BlazorChess.Pages
                         {
                             availableMoves[newRow, newCol] = false;
                         }
+
                         chessBoard.board[newRow, newCol] = lastHitPiece;
                         chessBoard.board[newRow, newCol].setPosition($"{newRow}{newCol}", true);
                         chessBoard.board[row, col] = piece;
