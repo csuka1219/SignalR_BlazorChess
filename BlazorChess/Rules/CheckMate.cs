@@ -19,15 +19,7 @@ namespace BlazorChess.Data
 
                 if (piece.Color == Color.White == whiteTurn)
                 {
-                    if (piece is King)
-                    {
-                        availableMoves = piece.calculatePossibleMoves(board, availableMoves, new bool[8, 8]);
-                    }
-                    else
-                    {
-                        availableMoves = piece.calculatePossibleMoves(board, availableMoves);
-                    }
-
+                    availableMoves = piece.calculatePossibleMoves(board, availableMoves);
                     if (checkAvailableMoves(board, piece, availableMoves, row, col, whiteTurn))
                     {
                         return false;

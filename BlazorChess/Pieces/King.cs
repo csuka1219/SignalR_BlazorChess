@@ -57,7 +57,7 @@ namespace BlazorChess.Pieces
             void CheckCastlingForRook(int rookRow, int rookCol, int row, int targetCol1, int targetCol2)
             {
                 var rook = board[rookRow, rookCol];
-                if (rook.GetType() == typeof(Rook) && rook.As<Rook>().AbleToCastling && board[row, targetCol1].PieceValue == 0 && board[row, targetCol2].PieceValue == 0 && !staleArray[row, targetCol1] && !staleArray[row, targetCol2])
+                if (rook.GetType() == typeof(Rook) && rook.As<Rook>().AbleToCastling && board[row, targetCol1].PieceValue == 0 && board[row, targetCol2].PieceValue == 0 && !staleArray[row, targetCol1] && !staleArray[row, targetCol2] && !staleArray[row, col])
                 {
                     availableMoves[row, targetCol1] = true;
                 }
@@ -66,7 +66,16 @@ namespace BlazorChess.Pieces
             return base.calculatePossibleMoves(board, availableMoves);
         }
 
-        private bool IsValidMove(int r, int c, Piece[,] board)
+		public override bool[,] calculatePossibleMoves(Piece[,] board, bool[,] availableMoves)
+        {
+            bool[,] staleArray = new bool[8, 8];
+			(int row, int col) = this.getPositionTuple();
+            staleArray[row, col] = true;
+            return calculatePossibleMoves(board, availableMoves, staleArray);
+        }
+
+
+		private bool IsValidMove(int r, int c, Piece[,] board)
         {
             if (r >= 0 && r < 8 && c >= 0 && c < 8)
             {
@@ -87,6 +96,7 @@ namespace BlazorChess.Pieces
             staleArray = this.calculatePossibleMoves(board, staleArray, new bool[8,8]);
             return base.checkForStale(board, staleArray);
         }
+
 
         public override void setPosition(string? position)
         {
