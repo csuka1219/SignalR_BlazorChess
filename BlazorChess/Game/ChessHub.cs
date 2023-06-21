@@ -1,11 +1,15 @@
 ﻿using Microsoft.AspNetCore.SignalR;
-using System.Text.RegularExpressions;
 
 namespace BlazorChess.Game
 {
     public static class UserHandler
     {
 		public static Dictionary<string, int> connectedPlayers = new Dictionary<string, int>();
+
+		public static List<string> getConnectedPlayerKeys() 
+		{ 
+			return connectedPlayers.Where(cp => cp.Value == 1).Select(cp => cp.Key).ToList(); 
+		}
     }
     public class ChessHub : Hub
 	{

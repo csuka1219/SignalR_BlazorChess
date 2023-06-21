@@ -1,5 +1,8 @@
-﻿using BlazorChess.Game;
+﻿using BlazorChess.Component;
+using BlazorChess.Game;
+using BlazorChess.Pieces;
 using Microsoft.AspNetCore.Components;
+using MudBlazor;
 using static MudBlazor.CategoryTypes;
 
 namespace BlazorChess.Pages
@@ -7,20 +10,29 @@ namespace BlazorChess.Pages
     public partial class Index
     {
         [Inject]
-        private NavigationManager NavigationManager { get; set; }
+        private NavigationManager navigationManager { get; set; }
 
-        private string gameName = "";
+        [Inject]
+        private IDialogService? dialogService { get; set; }
+
+
         private string searchString = "";
         private List<string> games = new List<string>();
 
         protected override void OnInitialized()
         {
-            games = UserHandler.connectedPlayers.Where(cp => cp.Value == 1).Select(cp => cp.Key).ToList();
+            refreshLobby();
+            base.OnInitialized();
         }
 
-        private void connection(string gameName)
+        private void refreshLobby()
         {
-            NavigationManager!.NavigateTo("game/" + gameName);
+            games = UserHandler.getConnectedPlayerKeys();
+        }
+
+        private async void createGame()
+        {
+            await dialogService!.ShowAsync<CreateGameDialog>("Create");
         }
 
         private bool lobbyFilter(string element)
@@ -30,6 +42,11 @@ namespace BlazorChess.Pages
             if (element.Contains(searchString, StringComparison.OrdinalIgnoreCase))
                 return true;
             return false;
+        }
+
+        private void rowClickEvent(TableRowClickEventArgs<string> tableRowClickEventArgs)
+        {
+            navigationManager!.NavigateTo("game/" + tableRowClickEventArgs.Item);
         }
     }
 }

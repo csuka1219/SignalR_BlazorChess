@@ -1,21 +1,40 @@
 ﻿@inherits LayoutComponentBase
-<MudThemeProvider />
+
+<MudThemeProvider Theme="myCustomTheme" IsDarkMode="true"/>
 <MudDialogProvider />
 <MudSnackbarProvider />
-<PageTitle>BlazorChess</PageTitle>
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://docs.microsoft.com/aspnet/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
+<MudLayout>
+    <MudAppBar Elevation="5">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudSpacer />
+        <MudText Class="align-self-center pt-2" Style="text-align: center; font-size:30px" Color="Color.Secondary">Blazor Chess</MudText>
+        <MudSpacer />
+        <MudImage Src="Images/Logo.png" Width="50" Height="40" Alt="Logo" Class="rounded-lg" />
+    </MudAppBar>
+    <MudDrawer @bind-Open="@isDrawerOpen" ClipMode="DrawerClipMode.Always" Variant="@DrawerVariant.Mini">
+        <MudDrawerHeader Class="d-flex flex-column align-self-center">
+            <div Class="py-5">
+                <MudAvatar Size="Size.Large" Class="align-self-center" Style="@GetAvatarSize()" Color="Color.Secondary" Variant="Variant.Filled">
+                    <MudIcon Color="Color.Warning" Icon="@Icons.Custom.Uncategorized.ChessKing" Size="Size.Large" />
+                </MudAvatar>
+                @if (isDrawerOpen)
+                {
+                    <MudText Class="align-self-center pt-2" Style="text-align: center;" Color="Color.Secondary">Hikaru</MudText>
+                }
+            </div>
+        </MudDrawerHeader>
+        <NavMenu/>
+    </MudDrawer>
+    <MudMainContent Class="pt-16">
+        <MudContainer Class="mt-6">
             @Body
-        </article>
-    </main>
-</div>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+<style>
+    a:hover {
+        color: #00c264 !important;
+    }
+</style>
