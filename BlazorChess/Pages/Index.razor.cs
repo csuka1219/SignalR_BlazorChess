@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using BlazorChess.Game;
+using Microsoft.AspNetCore.Components;
+using static MudBlazor.CategoryTypes;
 
 namespace BlazorChess.Pages
 {
@@ -8,10 +10,26 @@ namespace BlazorChess.Pages
         private NavigationManager NavigationManager { get; set; }
 
         private string gameName = "";
+        private string searchString = "";
+        private List<string> games = new List<string>();
 
-        private void connection()
+        protected override void OnInitialized()
+        {
+            games = UserHandler.connectedPlayers.Where(cp => cp.Value == 1).Select(cp => cp.Key).ToList();
+        }
+
+        private void connection(string gameName)
         {
             NavigationManager!.NavigateTo("game/" + gameName);
+        }
+
+        private bool lobbyFilter(string element)
+        {
+            if (string.IsNullOrWhiteSpace(searchString))
+                return true;
+            if (element.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+            return false;
         }
     }
 }

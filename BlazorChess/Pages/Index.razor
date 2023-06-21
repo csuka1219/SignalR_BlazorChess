@@ -1,4 +1,26 @@
 ﻿@page "/"
 
-<MudTextField @bind-Value="gameName" Label="Standard" Variant="Variant.Text"></MudTextField>
-<MudButton OnClick="connection" Variant="Variant.Filled" Color="Color.Primary">Primary</MudButton>
+<MudGrid>
+    <MudItem xs="12" sm="12" md="3" lg="3" xl="3" xxl="3">
+        <MudTextField @bind-Value="gameName" Label="Host name" Variant="Variant.Text"></MudTextField>
+        <MudButton OnClick="()=>connection(gameName)" Variant="Variant.Filled" Color="Color.Primary">Host</MudButton>
+    </MudItem>
+    <MudItem xs="12" sm="12" md="9" lg="9" xl="9" xxl="9">
+        <MudTable Items="games" Dense="true" Filter="new Func<string,bool>(lobbyFilter)">
+            <ToolBarContent>
+                <MudFab Color="Color.Secondary" StartIcon="@Icons.Material.Filled.Refresh" Size="Size.Medium" />
+                <MudSpacer />
+                <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>Player Name</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Player Name">@context</MudTd>
+            </RowTemplate>
+        </MudTable>
+
+    </MudItem>
+</MudGrid>
+
+
