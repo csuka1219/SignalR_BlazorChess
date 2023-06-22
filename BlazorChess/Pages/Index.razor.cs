@@ -1,9 +1,7 @@
 ﻿using BlazorChess.Component;
-using BlazorChess.Game;
-using BlazorChess.Pieces;
+using BlazorChess.Data;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
-using static MudBlazor.CategoryTypes;
 
 namespace BlazorChess.Pages
 {

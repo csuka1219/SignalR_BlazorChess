@@ -61,7 +61,7 @@ namespace BlazorChess.Game
         // Set a piece at a specific cell on the chessboard
         public void SetPiece(int row, int col, Piece piece)
         {
-            if (piece is King && piece.As<King>().AbleToCastling && new List<string> { "72", "76", "02", "06" }.Contains($"{row}{col}"))
+            if (piece is King && piece.As<King>().ableToCastling && new List<string> { "72", "76", "02", "06" }.Contains($"{row}{col}"))
             {
                 Castling.castling(this, $"{row}{col}");
             }

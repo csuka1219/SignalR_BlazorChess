@@ -6,7 +6,7 @@
 
 <MudLayout>
     <MudAppBar Elevation="5">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@toggleDrawer" />
         <MudSpacer />
         <MudText Class="align-self-center pt-2" Style="text-align: center; font-size:30px" Color="Color.Secondary">Blazor Chess</MudText>
         <MudSpacer />
@@ -15,7 +15,7 @@
     <MudDrawer @bind-Open="@isDrawerOpen" ClipMode="DrawerClipMode.Always" Variant="@DrawerVariant.Mini">
         <MudDrawerHeader Class="d-flex flex-column align-self-center">
             <div Class="py-5">
-                <MudAvatar Size="Size.Large" Class="align-self-center" Style="@GetAvatarSize()" Color="Color.Secondary" Variant="Variant.Filled">
+                <MudAvatar Size="Size.Large" Class="align-self-center" Style="@getAvatarSize()" Color="Color.Secondary" Variant="Variant.Filled">
                     <MudIcon Color="Color.Warning" Icon="@Icons.Custom.Uncategorized.ChessKing" Size="Size.Large" />
                 </MudAvatar>
                 @if (isDrawerOpen)

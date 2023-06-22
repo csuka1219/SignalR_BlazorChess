@@ -4,11 +4,11 @@ namespace BlazorChess.Pieces
 {
     public class King : Piece
     {
-        public bool AbleToCastling { get; set; }
+        public bool ableToCastling { get; set; }
 
-        public King(Color color, int pieceValue, string? icon, string? position) : base(color, pieceValue, icon, position)
+        public King(Color color, int pieceValue, string? icon, string? position, bool ableToCastling = true) : base(color, pieceValue, icon, position)
         {
-            AbleToCastling = true;
+            this.ableToCastling = ableToCastling;
         }
 
         public override bool[,] calculatePossibleMoves(Piece[,] board, bool[,] availableMoves, bool[,] staleArray)
@@ -27,7 +27,7 @@ namespace BlazorChess.Pieces
             checkMove(row + 1, col + 1);
 
             // Check for additional moves if not in 'all' mode and castling conditions are met
-            if (AbleToCastling)
+            if (ableToCastling)
             {
                 checkCastling();
             }
@@ -57,7 +57,7 @@ namespace BlazorChess.Pieces
             void CheckCastlingForRook(int rookRow, int rookCol, int row, int targetCol1, int targetCol2)
             {
                 var rook = board[rookRow, rookCol];
-                if (rook.GetType() == typeof(Rook) && rook.As<Rook>().AbleToCastling && board[row, targetCol1].PieceValue == 0 && board[row, targetCol2].PieceValue == 0 && !staleArray[row, targetCol1] && !staleArray[row, targetCol2] && !staleArray[row, col])
+                if (rook.GetType() == typeof(Rook) && rook.As<Rook>().ableToCastling && board[row, targetCol1].PieceValue == 0 && board[row, targetCol2].PieceValue == 0 && !staleArray[row, targetCol1] && !staleArray[row, targetCol2] && !staleArray[row, col])
                 {
                     availableMoves[row, targetCol1] = true;
                 }
@@ -100,15 +100,20 @@ namespace BlazorChess.Pieces
 
         public override void setPosition(string? position)
         {
-            if (AbleToCastling)
+            if (ableToCastling)
             {
-                AbleToCastling = false;
+                ableToCastling = false;
             }
             base.setPosition(position);
         }
         public override void setPosition(string? position, bool simulate)
         {
             base.setPosition(position);
+        }
+
+        public override string getFENRepresentation()
+        {
+            return Color == Color.White ? "K" : "k";
         }
     }
 }

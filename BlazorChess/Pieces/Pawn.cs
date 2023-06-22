@@ -103,5 +103,10 @@ namespace BlazorChess.Pieces
 
             return base.checkForStale(board, staleArray);
         }
+
+        public override string getFENRepresentation()
+        {
+            return Color == Color.White ? "P" : "p";
+        }
     }
 }

@@ -11,6 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Blazored.LocalStorage" Version="4.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.18" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" Version="6.0.18" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.Json" Version="6.0.18" />

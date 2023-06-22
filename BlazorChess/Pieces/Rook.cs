@@ -4,10 +4,10 @@ namespace BlazorChess.Pieces
 {
     public class Rook : Piece
     {
-        public bool AbleToCastling { get; set; }
-        public Rook(Color color, int pieceValue, string? icon, string? position) : base(color, pieceValue, icon, position)
+        public bool ableToCastling { get; set; }
+        public Rook(Color color, int pieceValue, string? icon, string? position, bool ableToCastling = true) : base(color, pieceValue, icon, position)
         {
-            AbleToCastling = true;
+            this.ableToCastling = ableToCastling;
         }
 
         public override bool[,] calculatePossibleMoves(Piece[,] board, bool[,] availableMoves)
@@ -25,9 +25,9 @@ namespace BlazorChess.Pieces
 
         public override void setPosition(string? position)
         {
-            if (AbleToCastling)
+            if (ableToCastling)
             {
-                AbleToCastling = false;
+                ableToCastling = false;
             }
             base.setPosition(position);
         }
@@ -35,6 +35,11 @@ namespace BlazorChess.Pieces
         public override void setPosition(string? position, bool simulate)
         {
             base.setPosition(position);
+        }
+
+        public override string getFENRepresentation()
+        {
+            return Color == Color.White ? "R" : "r";
         }
     }
 }

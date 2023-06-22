@@ -20,5 +20,10 @@ namespace BlazorChess.Pieces
             staleArray = this.calculatePossibleMoves(board, staleArray);
             return base.checkForStale(board, staleArray);
         }
+
+        public override string getFENRepresentation()
+        {
+            return Color == Color.White ? "B" : "b";
+        }
     }
 }

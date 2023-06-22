@@ -1,10 +1,14 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using Blazored.LocalStorage;
+using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
 namespace BlazorChess.Shared
 {
     public partial class MainLayout
     {
+        [Inject]
+        ILocalStorageService localStorage { get; set; }
+
         private bool isDrawerOpen = true;
 
         private MudTheme myCustomTheme = new MudTheme()
@@ -32,12 +36,25 @@ namespace BlazorChess.Shared
             },
         };
 
-        private void ToggleDrawer()
+        protected override async Task OnInitializedAsync()
+        {
+            string uniqueGuid = await localStorage.GetItemAsync<string>("uniqueGuid");
+
+            if (string.IsNullOrEmpty(uniqueGuid))
+            {
+                // Save the GUID to localStorage
+                await localStorage.SetItemAsync("uniqueGuid", Guid.NewGuid().ToString());
+            }
+                
+            await base.OnInitializedAsync();
+        }
+
+        private void toggleDrawer()
         {
             isDrawerOpen = !isDrawerOpen;
         }
 
-        private string GetAvatarSize()
+        private string getAvatarSize()
         {
             return isDrawerOpen ? "width:56px;height:56px;" : "width:40px;height:40px;";
         }

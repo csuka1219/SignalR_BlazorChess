@@ -53,5 +53,10 @@ namespace BlazorChess.Pieces
             int col = int.Parse(this.Position!.Substring(1, 1));
             return (row, col);
         }
+
+        public virtual string getFENRepresentation()
+        {
+            return "0";
+        }
     }
 }

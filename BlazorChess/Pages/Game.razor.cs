@@ -1,6 +1,7 @@
 ﻿using BlazorChess.Data;
 using BlazorChess.Game;
 using BlazorChess.Pieces;
+using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 using MudBlazor;
@@ -10,6 +11,9 @@ namespace BlazorChess.Pages
 {
     public partial class Game : IDisposable
     {
+        [Inject]
+        ILocalStorageService localStorage { get; set; }
+
         [Inject] 
         private IDialogService? DialogService { get; set; }
 
@@ -24,6 +28,8 @@ namespace BlazorChess.Pages
         IEnumerable<Piece> list = new List<Piece>();
         private MudDropContainer<Piece> _container;
 
+        string uniqueGuid = "";
+
         bool[,] availableMoves = new bool[8, 8];
         public bool whiteTurn = true;
         public bool lastTurn = true;
@@ -35,7 +41,6 @@ namespace BlazorChess.Pages
 		protected override async Task OnInitializedAsync()
         {
             list = chessBoard.board.Cast<Piece>().ToList();
-            //todo connect
 
             hubConnection = new HubConnectionBuilder()
 			.WithUrl(NavigationManager!.ToAbsoluteUri("/chessHub"))
@@ -54,7 +59,7 @@ namespace BlazorChess.Pages
 
 			await hubConnection.StartAsync();
             await joinGame(gameName);
-		}
+        }
         public bool canDrop(Piece selectedPiece, string s)
         {
             if (!player.IsMyTurn)
@@ -178,33 +183,52 @@ namespace BlazorChess.Pages
 
 		private async Task joinGame(string groupName)
 		{
-			if (!string.IsNullOrEmpty(gameName))
+            string uniqueGuid = await localStorage.GetItemAsync<string>("uniqueGuid");
+            if (!string.IsNullOrEmpty(gameName))
 			{
 				await hubConnection.SendAsync("LeaveGame", gameName);
 			}
 
 			gameName = groupName;
 			await hubConnection.SendAsync("JoinGame", gameName);
-            if (UserHandler.connectedPlayers.ContainsKey(groupName))
+            if (UserHandler.connectedPlayers.ContainsKey(gameName))
             {
-                UserHandler.connectedPlayers[groupName] = 2;
+                if (UserHandler.connectedPlayers[gameName].Contains(uniqueGuid))
+                {
+                    //refreshing or renavigate
+                    chessBoard.board = UserHandler.getMatchInfoBoard(gameName);
+                    list = chessBoard.board.Cast<Piece>().ToList();
+                    bool isWhitePlayer = UserHandler.connectedPlayers[gameName].First() == uniqueGuid;
+                    player.IsMyTurn = isWhitePlayer == UserHandler.matchInfos[gameName].isWhiteTurn;
+                    whiteTurn = UserHandler.matchInfos[gameName].isWhiteTurn;
+                    StateHasChanged();
+                    _container.Refresh();
+                }
+                else
+                {
+                    //second player connected
+                    UserHandler.connectedPlayers[groupName].Add(uniqueGuid);
+                    player.IsMyTurn = false;
+                }
             }
             else
             {
-                UserHandler.connectedPlayers.Add(groupName, 1);
+                UserHandler.connectedPlayers.Add(groupName, new List<string>() { uniqueGuid });
+                UserHandler.matchInfos.Add(groupName, new MatchInfo());
+                player.IsMyTurn = true;
             }
 
-            player.IsMyTurn = UserHandler.connectedPlayers[gameName] == 1;
         }
 
 		private async Task HandleMove(int fromX, int fromY, int toX, int toY)
 		{
 			await hubConnection.SendAsync("MovePiece", gameName, fromX, fromY, toX, toY);
-		}
+            UserHandler.setMatchInfoMoves(gameName, (fromX, fromY), (toX, toY));
+        }
 
 		public void Dispose()
         {
-            UserHandler.connectedPlayers.Remove(gameName);
+            UserHandler.setMatchInfoBoard(gameName, chessBoard.board);
         }
     }
 }
