@@ -9,27 +9,32 @@ namespace BlazorChess.Data
     {
         public static void castling(Chessboard chessBoard, string position)
         {
+            // Perform castling based on the given position
             switch (position)
             {
                 case "72":
+                    // Perform castling on the queen's side for white
                     chessBoard.board[7, 0].setPosition("73");
                     Piece rook = chessBoard.board[7, 0];
                     chessBoard.board[7, 0] = new EmptyPiece();
                     chessBoard.board[7, 3] = rook;
                     break;
                 case "76":
+                    // Perform castling on the king's side for white
                     chessBoard.board[7, 7].setPosition("75");
                     rook = chessBoard.board[7, 7];
                     chessBoard.board[7, 7] = new EmptyPiece();
                     chessBoard.board[7, 5] = rook;
                     break;
                 case "02":
+                    // Perform castling on the queen's side for black
                     chessBoard.board[0, 0].setPosition("03");
                     rook = chessBoard.board[0, 0];
                     chessBoard.board[0, 0] = new EmptyPiece();
                     chessBoard.board[0, 3] = rook;
                     break;
                 case "06":
+                    // Perform castling on the king's side for black
                     chessBoard.board[0, 7].setPosition("05");
                     rook = chessBoard.board[0, 7];
                     chessBoard.board[0, 7] = new EmptyPiece();
@@ -40,81 +45,102 @@ namespace BlazorChess.Data
 
         public static string getCastlingAvailability(Piece[,] board)
         {
+            // StringBuilder to store the castling availability
             StringBuilder sb = new StringBuilder();
 
+            // Check if castling is available for the white side (King's side and Queen's side)
             if (canCastleKingSide(Color.White, board))
             {
-                sb.Append('K');
+                sb.Append('K'); // Append 'K' to indicate castling availability for the white King's side
             }
             if (canCastleQueenSide(Color.White, board))
             {
-                sb.Append('Q');
+                sb.Append('Q'); // Append 'Q' to indicate castling availability for the white Queen's side
             }
+
+            // Check if castling is available for the black side (King's side and Queen's side)
             if (canCastleKingSide(Color.Black, board))
             {
-                sb.Append('k');
+                sb.Append('k'); // Append 'k' to indicate castling availability for the black King's side
             }
             if (canCastleQueenSide(Color.Black, board))
             {
-                sb.Append('q');
+                sb.Append('q'); // Append 'q' to indicate castling availability for the black Queen's side
             }
 
+            // If no castling is available, return "-"
             return sb.Length > 0 ? sb.ToString() : "-";
         }
 
+
         private static bool canCastleKingSide(Pieces.Color color, Piece[,] board)
         {
-            int rank = (color == Color.White) ? 7 : 0;
+            // Determine the row of the king and rook based on the color
+            int row = (color == Color.White) ? 7 : 0;
 
             // Check if the king and rook are in their initial positions
-            Piece king = board[rank, 4];
-            Piece rook = board[rank, 7];
+            Piece king = board[row, 4];
+            Piece rook = board[row, 7];
 
+            // Check if the pieces are of the correct type (king and rook) and have the correct color
             if (king is King && rook is Rook && king.Color == color && rook.Color == color)
             {
+                // Check if both the king and rook are able to perform castling
                 return king.As<King>().ableToCastling && rook.As<Rook>().ableToCastling;
             }
 
+            // Castling is not possible
             return false;
         }
+
         private static bool canCastleQueenSide(Color color, Piece[,] board)
         {
-            int rank = (color == Color.White) ? 7 : 0;
+            // Determine the row of the king and rook based on the color
+            int row = (color == Color.White) ? 7 : 0;
 
             // Check if the king and rook are in their initial positions
-            Piece king = board[rank, 4];
-            Piece rook = board[rank, 0];
+            Piece king = board[row, 4];
+            Piece rook = board[row, 0];
 
+            // Check if the pieces are of the correct type (king and rook) and have the correct color
             if (king is King && rook is Rook && king.Color == color && rook.Color == color)
             {
+                // Check if both the king and rook are able to perform castling
                 return king.As<King>().ableToCastling && rook.As<Rook>().ableToCastling;
             }
 
+            // Castling is not possible
             return false;
         }
-
-        //-----------------------------------------
 
         public static void setCastlingAvailability(Piece[,] board, string castlingAvailability)
         {
+            // Check if castling availability is not empty ("-")
             if (castlingAvailability != "-")
             {
-                string[] availableCastling = castlingAvailability.Select(c => c.ToString()).ToArray();
+                // Convert the castling availability string into an array of individual characters
+                char[] availableCastling = castlingAvailability.ToCharArray();
 
-                foreach (string castling in availableCastling)
+                // Iterate over each castling option
+                foreach (char castling in availableCastling)
                 {
-                    Color color = char.IsUpper(castling[0]) ? Color.White : Color.Black;
+                    // Determine the color based on the case of the character (upper case for white, lower case for black)
+                    Color color = char.IsUpper(castling) ? Color.White : Color.Black;
 
-                    switch (char.ToLower(castling[0]))
+                    // Check the type of castling based on the lowercase character
+                    switch (char.ToLower(castling))
                     {
                         case 'k':
+                            // Set king-side castling availability for the specified color to true
                             setKingCastlingAvailability(board, color, true);
                             break;
                         case 'q':
+                            // Set queen-side castling availability for the specified color to true
                             setQueenCastlingAvailability(board, color, true);
                             break;
                         default:
-                            setRookCastlingAvailability(board, color, castling[0], true);
+                            // Set castling availability for a specific rook based on the character
+                            setRookCastlingAvailability(board, color, castling, true);
                             break;
                     }
                 }
@@ -123,38 +149,45 @@ namespace BlazorChess.Data
 
         private static void setRookCastlingAvailability(Piece[,] board, Color color, char rookFEN, bool ableToCastle)
         {
-            int rank = (color == Color.White) ? 7 : 0;
+            int row = (color == Color.White) ? 7 : 0;
 
-            int file = Char.ToLower(rookFEN) - 'a';
+            int col = Char.ToLower(rookFEN) - 'a';
 
-            if (board[rank, file] is Rook && board[rank, file].Color == color)
+            // Check if the piece at the specified position is a rook and has the correct color
+            if (board[row, col] is Rook && board[row, col].Color == color)
             {
-                board[rank, file].As<Rook>().ableToCastling = ableToCastle;
+                // Set the ability to castle for the rook to the specified value
+                board[row, col].As<Rook>().ableToCastling = ableToCastle;
             }
         }
 
         private static void setQueenCastlingAvailability(Piece[,] board, Color color, bool ableToCastle)
         {
-            int rank = (color == Color.White) ? 7 : 0;
+            int row = (color == Color.White) ? 7 : 0;
 
-            int file = 7;
+            int col = 7;
 
-            if (board[rank, file] is Rook && board[rank, file].Color == color)
+            // Check if the piece at the specified position is a rook and has the correct color
+            if (board[row, col] is Rook && board[row, col].Color == color)
             {
-                board[rank, file].As<Rook>().ableToCastling = ableToCastle;
+                // Set the ability to castle for the rook to the specified value
+                board[row, col].As<Rook>().ableToCastling = ableToCastle;
             }
         }
 
         private static void setKingCastlingAvailability(Piece[,] board, Color color, bool ableToCastle)
         {
-            int rank = (color == Color.White) ? 7 : 0;
+            int row = (color == Color.White) ? 7 : 0;
 
-            int file = 4;
+            int col = 4;
 
-            if (board[rank, file] is King && board[rank, file].Color == color)
+            // Check if the piece at the specified position is a king and has the correct color
+            if (board[row, col] is King && board[row, col].Color == color)
             {
-                board[rank, file].As<King>().ableToCastling = ableToCastle;
+                // Set the ability to castle for the king to the specified value
+                board[row, col].As<King>().ableToCastling = ableToCastle;
             }
         }
+
     }
 }

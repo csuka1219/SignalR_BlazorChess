@@ -58,18 +58,26 @@ namespace BlazorChess.Game
             }
         }
 
-        // Set a piece at a specific cell on the chessboard
         public void SetPiece(int row, int col, Piece piece)
         {
+            // Check if the piece is a King and is eligible for castling, and if the destination position is one of the castling positions
             if (piece is King && piece.As<King>().ableToCastling && new List<string> { "72", "76", "02", "06" }.Contains($"{row}{col}"))
             {
+                // Perform the castling move
                 Castling.castling(this, $"{row}{col}");
             }
+
+            // Extract the old row and column from the current position of the piece
             int oldRow = int.Parse(piece.Position![..1]);
             int oldCol = int.Parse(piece.Position!.Substring(1, 1));
+
+            // Set the new position for the piece
             piece.setPosition($"{row}{col}");
+
+            // Update the chessboard by replacing the old position with an EmptyPiece and setting the new position with the piece
             board[oldRow, oldCol] = new EmptyPiece();
             board[row, col] = piece;
         }
+
     }
 }

@@ -4,9 +4,9 @@ namespace BlazorChess.Game
 {
     public class ChessHub : Hub
 	{
-		public async Task MovePiece(string groupName, int fromX, int fromY, int toX, int toY)
+		public async Task MovePiece(string groupName, int fromRow, int fromCol, int toRow, int toCol)
 		{
-			await Clients.GroupExcept(groupName, Context.ConnectionId).SendAsync("ReceiveMove", fromX, fromY, toX, toY);
+			await Clients.GroupExcept(groupName, Context.ConnectionId).SendAsync("ReceiveMove", fromRow, fromCol, toRow, toCol);
 		}
 
 		public async Task JoinGame(string groupName)
