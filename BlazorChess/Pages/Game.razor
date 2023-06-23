@@ -16,14 +16,17 @@
                     @for (int c = 0; c < 8; c++)
                     {
                         string col = c.ToString();
-                        <MudDropZone T="Piece" Identifier="@($"{row}{col}")" DraggingClass="mud-theme-success" Class="d-flex justify-center align-center border-2 border-solid docs-gray-bg mud-border-lines-default" Style="height:64px;width:64px;"/>
+                        <MudDropZone T="Piece" Identifier="@($"{row}{col}")" DraggingClass="mud-theme-success" Class="d-flex justify-center align-center border-2 border-solid docs-gray-bg mud-border-lines-default" Style="@getCellCss(r+c)"/>
                     }
                     </div>
                 }
             </ChildContent>
             <ItemRenderer>
                 <div class="d-flex justify-center align-center flex-grow-1">
-                    <MudIcon Icon="@context.Icon" Color="context.Color == Pieces.Color.White ? MudBlazor.Color.Primary:MudBlazor.Color.Secondary" Size="Size.Large" />
+                    @*<MudIcon Icon="@context.Icon" Color="context.Color == Pieces.Color.White ? MudBlazor.Color.Primary:MudBlazor.Color.Secondary" Size="Size.Large" />*@
+                    @*<MudIcon Icon="icomoon-liga icon-bb" Color="context.Color == Pieces.Color.White ? MudBlazor.Color.Primary:MudBlazor.Color.Secondary" Size="Size.Large" />*@
+                    <img src="@context.Icon" style="width: 60px; padding-top: 5px;" alt="Icon" />
+
                 </div>
             </ItemRenderer>
         </MudDropContainer>
@@ -33,13 +36,18 @@
         <MudPaper Width="75%" Style="margin-left:auto; margin-right:auto">
             @*<MudText Align="Align.Center" Typo="Typo.h3">@((player.IsMyTurn) ? "Your Turn" : "Opponents Turn")</MudText>*@
             <div style="max-height: 50% !important; height: 300px; overflow-y: auto;">
-                <MudList>
+                <MudList Dense>
                     <MudGrid Style="width: 100%">
                         @foreach (PieceChange item in pieceChanges)
                         {
-                            <MudItem Style="width:100%" xs="6" sm="6" md="6" lg="6" xl="6" xxl="6">
-                                <MudListItem>
-                                    @convertMoveToString(item)
+                            @*<MudItem Style="width:100%; padding-top: 2px; padding-bottom: 2px" xs="2" sm="2" md="2" lg="2" xl="2" xxl="2">
+                                <MudListItem Style="padding-top: 0px; padding-bottom: 0px;">
+                                    <MudText Align="Align.Left" Typo="Typo.h6">@moveCounter</MudText>
+                                </MudListItem>
+                            </MudItem>*@
+                            <MudItem Style="width:100%; padding-top: 2px; padding-bottom: 2px" xs="4" sm="4" md="4" lg="4" xl="4" xxl="4">
+                                <MudListItem Style="padding-top: 0px; padding-bottom: 0px;">
+                                    <MudText Align="Align.Left" Typo="Typo.h6">@convertMoveToString(item)</MudText>
                                 </MudListItem>
                             </MudItem>
                         }

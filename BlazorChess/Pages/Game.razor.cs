@@ -35,6 +35,7 @@ namespace BlazorChess.Pages
         public bool isStale = false;
 		bool dragEnded = true;
         public string lastposition = "";
+        private int moveCounter = 0;
 
         private HubConnection hubConnection;
         protected override async Task OnInitializedAsync()
@@ -327,6 +328,13 @@ namespace BlazorChess.Pages
         {
             // Send a move piece request to the hub with the game name and coordinates of the move
             await hubConnection.SendAsync("MovePiece", gameName, fromRow, fromCol, toRow, toCol);
+            moveCounter++;
+        }
+
+        private string getCellCss(int index)
+        {
+            string backgroundColor = index % 2 == 0 ? "#eeeed2" : "#769656";
+            return "height:64px; width:64px; background-color:" + backgroundColor;
         }
 
         // Implementation of the IDisposable interface to perform cleanup when the object is disposed
