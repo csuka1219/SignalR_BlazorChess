@@ -27,6 +27,7 @@ namespace BlazorChess.Pages
         private Player player = new Player();
         IEnumerable<Piece> list = new List<Piece>();
         private MudDropContainer<Piece> _container;
+        private List<PieceChange> pieceChanges = new List<PieceChange>();
 
         bool[,] availableMoves = new bool[8, 8];
         public bool whiteTurn = true;
@@ -60,6 +61,7 @@ namespace BlazorChess.Pages
 
                     // Update the chess board UI
                     _container.Refresh();
+                    StateHasChanged();
                 }
             });
 
@@ -135,15 +137,21 @@ namespace BlazorChess.Pages
             int newCol = piece.DropzoneIdentifier[1] - '0';
 
             // Check if the dropped piece captures another piece
-            bool isHittedPiece = list.Any(p => p.PieceValue != piece.Item!.PieceValue && p.Position == piece.DropzoneIdentifier);
-            if (isHittedPiece)
+            bool isHitPiece = list.Any(p => p.PieceValue != piece.Item!.PieceValue && p.Position == piece.DropzoneIdentifier);
+            int hitpieceValue = 0;
+            if (isHitPiece)
             {
                 // Clear the position of the captured piece
-                list.FirstOrDefault(p => p.Position == piece.DropzoneIdentifier)!.Position = null;
+                Piece hitPiece = list.First(p => p.Position == piece.DropzoneIdentifier);
+                hitPiece.Position = null;
+                hitpieceValue = hitPiece.PieceValue;
             }
 
             // Get the current position of the moved piece
-            (int a, int b) = piece.Item!.getPositionTuple();
+            (int oldRow, int oldCol) = piece.Item!.getPositionTuple();
+
+            //Store move
+            pieceChanges.Add(new PieceChange((oldRow, oldCol), (newRow, newCol), piece.Item.PieceValue, hitpieceValue));
 
             // Set the piece on the chessboard to the new position
             chessBoard.SetPiece(newRow, newCol, piece.Item);
@@ -164,7 +172,7 @@ namespace BlazorChess.Pages
             if (player.IsMyTurn)
             {
                 // Handle the move asynchronously
-                await HandleMove(a, b, newRow, newCol);
+                await HandleMove(oldRow, oldCol, newRow, newCol);
             }
 
             // Toggle the turn for the player
@@ -234,6 +242,39 @@ namespace BlazorChess.Pages
             }
         }
 
+        private string convertMoveToString(PieceChange pieceChange)
+        {
+            Dictionary<int, string> pieceMap = new Dictionary<int, string>
+            {
+                { 1, "" }, { 2, "r" }, { 3, "n" }, { 4, "b" },
+                { 5, "q" }, { 6, "k" }, { 11, "" }, { 12, "r" },
+                { 13, "n" }, { 14, "b" }, { 15, "q" }, { 16, "k" }
+            };
+
+            Dictionary<int, string> fileMap = new Dictionary<int, string>
+            {
+                { 0, "a" }, { 1, "b" }, { 2, "c" }, { 3, "d" },
+                { 4, "e" }, { 5, "f" }, { 6, "g" }, { 7, "h" }
+            };
+
+            Dictionary<int, string> rankMap = new Dictionary<int, string>
+            {
+                { 0, "1" }, { 1, "2" }, { 2, "3" }, { 3, "4" },
+                { 4, "5" }, { 5, "6" }, { 6, "7" }, { 7, "8" }
+            };
+
+            int rowIndex = 7 - pieceChange.toMove.row;
+            int colIndex = pieceChange.toMove.col;
+
+            string isHit = pieceChange.hitPiece == 0 ? "" : "x";
+            string piece = pieceMap[pieceChange.movedPieceValue];
+            piece = pieceChange.hitPiece != 0 && string.IsNullOrEmpty(piece) ? fileMap[pieceChange.fromMove.col] : piece;
+            string row = rankMap[rowIndex];
+            string col = fileMap[colIndex];
+
+            return piece + isHit + col + row;
+        }
+
         private async Task joinGame()
         {
             // Retrieve the unique GUID from local storage
@@ -245,12 +286,18 @@ namespace BlazorChess.Pages
             // Check if there are already connected players for the game
             if (UserHandler.connectedPlayers.ContainsKey(gameName))
             {
+                if (UserHandler.connectedPlayers[gameName].Count > 1 && !UserHandler.connectedPlayers[gameName].Contains(uniqueGuid))
+                {
+                    navigationManager!.NavigateTo("/");
+                    return;
+                }
                 // Check if the current player is already connected to the game
                 if (UserHandler.connectedPlayers[gameName].Contains(uniqueGuid))
                 {
                     // The player is refreshing or renavigating
                     // Update the chessboard, pieces list, and player turn
                     chessBoard.board = UserHandler.getMatchInfoBoard(gameName);
+                    pieceChanges = UserHandler.getMatchInfoMoves(gameName);
                     list = chessBoard.board.Cast<Piece>().ToList();
                     bool isWhitePlayer = UserHandler.connectedPlayers[gameName].First() == uniqueGuid;
                     player.IsMyTurn = isWhitePlayer == UserHandler.matchInfos[gameName].isWhiteTurn;
@@ -280,9 +327,6 @@ namespace BlazorChess.Pages
         {
             // Send a move piece request to the hub with the game name and coordinates of the move
             await hubConnection.SendAsync("MovePiece", gameName, fromRow, fromCol, toRow, toCol);
-
-            // Update the match information with the performed move
-            UserHandler.setMatchInfoMoves(gameName, (fromRow, fromCol), (toRow, toCol));
         }
 
         // Implementation of the IDisposable interface to perform cleanup when the object is disposed
@@ -290,6 +334,7 @@ namespace BlazorChess.Pages
         {
             // Update the match information with the current state of the chessboard
             UserHandler.setMatchInfoBoard(gameName, chessBoard.board);
+            UserHandler.setMatchInfoMoves(gameName, pieceChanges, whiteTurn);
         }
 
     }

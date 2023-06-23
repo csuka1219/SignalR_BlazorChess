@@ -1,26 +1,51 @@
 ﻿@page "/game/{gameName}"
+@using BlazorChess.Data;
 @using BlazorChess.Pieces;
 
-<MudDropContainer T="Piece" @ref="_container" Items="@list" CanDropClass="mud-border-info" NoDropClass="mud-border-error"
-                  CanDrop="@( (item,identifier ) => canDrop(item,identifier))"
-    ItemsSelector="@((item,dropzone) => item.Position == dropzone)" ItemDropped="pieceUpdated" 
-    Class="border-2 border-solid mud-border-lines-default">
-    <ChildContent>           
-        @for (int r = 0; r < 8; r++)
-        {
-            string row = r.ToString();
-            <div class="d-flex">
-            @for (int c = 0; c < 8; c++)
-            {
-                string col = c.ToString();
-                <MudDropZone T="Piece" Identifier="@($"{row}{col}")" DraggingClass="mud-theme-success" Class="d-flex justify-center align-center border-2 border-solid docs-gray-bg mud-border-lines-default" Style="height:64px;width:64px;"/>
-            }
+<MudGrid>
+    <MudItem xs="12" sm="12" md="6" lg="6" xl="6" xxl="6">                    
+        <MudDropContainer T="Piece" Style="max-width: 515px" @ref="_container" Items="@list" CanDropClass="mud-border-info" NoDropClass="mud-border-error"
+                          CanDrop="@( (item,identifier ) => canDrop(item,identifier))"
+            ItemsSelector="@((item,dropzone) => item.Position == dropzone)" ItemDropped="pieceUpdated" 
+            Class="border-2 border-solid mud-border-lines-default">
+            <ChildContent>           
+                @for (int r = 0; r < 8; r++)
+                {
+                    string row = r.ToString();
+                    <div class="d-flex">
+                    @for (int c = 0; c < 8; c++)
+                    {
+                        string col = c.ToString();
+                        <MudDropZone T="Piece" Identifier="@($"{row}{col}")" DraggingClass="mud-theme-success" Class="d-flex justify-center align-center border-2 border-solid docs-gray-bg mud-border-lines-default" Style="height:64px;width:64px;"/>
+                    }
+                    </div>
+                }
+            </ChildContent>
+            <ItemRenderer>
+                <div class="d-flex justify-center align-center flex-grow-1">
+                    <MudIcon Icon="@context.Icon" Color="context.Color == Pieces.Color.White ? MudBlazor.Color.Primary:MudBlazor.Color.Secondary" Size="Size.Large" />
+                </div>
+            </ItemRenderer>
+        </MudDropContainer>
+    </MudItem>
+
+    <MudItem xs="12" sm="12" md="6" lg="6" xl="6" xxl="6">
+        <MudPaper Width="75%" Style="margin-left:auto; margin-right:auto">
+            @*<MudText Align="Align.Center" Typo="Typo.h3">@((player.IsMyTurn) ? "Your Turn" : "Opponents Turn")</MudText>*@
+            <div style="max-height: 50% !important; height: 300px; overflow-y: auto;">
+                <MudList>
+                    <MudGrid Style="width: 100%">
+                        @foreach (PieceChange item in pieceChanges)
+                        {
+                            <MudItem Style="width:100%" xs="6" sm="6" md="6" lg="6" xl="6" xxl="6">
+                                <MudListItem>
+                                    @convertMoveToString(item)
+                                </MudListItem>
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudList>
             </div>
-        }
-    </ChildContent>
-    <ItemRenderer>
-        <div class="d-flex justify-center align-center flex-grow-1">
-            <MudIcon Icon="@context.Icon" Color="context.Color == Pieces.Color.White ? MudBlazor.Color.Primary:MudBlazor.Color.Secondary" Size="Size.Large" />
-        </div>
-    </ItemRenderer>
-</MudDropContainer>
+        </MudPaper>
+    </MudItem>
+</MudGrid>

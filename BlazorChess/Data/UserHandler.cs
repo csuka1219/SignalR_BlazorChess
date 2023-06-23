@@ -1,4 +1,5 @@
-﻿using BlazorChess.Pieces;
+﻿using BlazorChess.Data;
+using BlazorChess.Pieces;
 using MudBlazor;
 using MudBlazor.Extensions;
 using System.Text;
@@ -15,24 +16,29 @@ namespace BlazorChess.Data
             return connectedPlayers.Where(cp => cp.Value.Count == 1).Select(cp => cp.Key).ToList();
         }
 
-        public static void setMatchInfoMoves(string gameName, (int,int) fromMove,(int,int) toMove)
+        public static void setMatchInfoMoves(string gameName, List<PieceChange> pieceChanges, bool isWhiteTurn)
         {
-            matchInfos[gameName].pieceChanges.Add(new PieceChanges(fromMove, toMove));
-            matchInfos[gameName].isWhiteTurn = !matchInfos[gameName].isWhiteTurn;
+            matchInfos[gameName].pieceChanges = new List<PieceChange>(pieceChanges);
+            matchInfos[gameName].isWhiteTurn = isWhiteTurn;
         }
 
         public static void setMatchInfoBoard(string gameName, Piece[,] board)
         {
-            string boardString = ConvertBoardToString(board);
+            string boardString = convertBoardToString(board);
             matchInfos[gameName].boardInfo = boardString;
         }
 
         public static Piece[,] getMatchInfoBoard(string gameName)
         {
-            return ConvertStringToBoard(matchInfos[gameName].boardInfo);
+            return convertStringToBoard(matchInfos[gameName].boardInfo);
         }
 
-        private static string ConvertBoardToString(Piece[,] board)
+        public static List<PieceChange> getMatchInfoMoves(string gameName)
+        {
+            return matchInfos[gameName].pieceChanges;
+        }
+
+        private static string convertBoardToString(Piece[,] board)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -78,7 +84,7 @@ namespace BlazorChess.Data
             return sb.ToString();
         }
 
-        private static Piece[,] ConvertStringToBoard(string boardString)
+        private static Piece[,] convertStringToBoard(string boardString)
         {
             Piece[,] board = new Piece[8, 8];
 
@@ -92,7 +98,7 @@ namespace BlazorChess.Data
                 {
                     char c = ranks[rank][file];
                    
-                    Piece piece = CreatePieceFromFEN(c,rank,file);
+                    Piece piece = createPieceFromFEN(c,rank,file);
                     if (piece != null)
                     {
                         board[rank, file] = piece;
@@ -104,9 +110,8 @@ namespace BlazorChess.Data
 
             return board;
         }
-
-        
-        private static Piece CreatePieceFromFEN(char fen,int row,int col)
+   
+        private static Piece createPieceFromFEN(char fen,int row,int col)
         {
             Pieces.Color color = char.IsUpper(fen) ? Pieces.Color.White : Pieces.Color.Black;
             bool isWhite = color == Pieces.Color.White;
@@ -134,26 +139,14 @@ namespace BlazorChess.Data
 
 public class MatchInfo
 {
-    public List<PieceChanges> pieceChanges { get; set; }
+    public List<PieceChange> pieceChanges { get; set; }
     public string boardInfo { get; set; }
     public bool isWhiteTurn { get; set; }
         
     public MatchInfo() 
     {
-        pieceChanges = new List<PieceChanges>();
+        pieceChanges = new List<PieceChange>();
         boardInfo = string.Empty;
         isWhiteTurn = true;
-    }
-}
-
-public class PieceChanges
-{
-    public (int, int) fromMove { get; set; }
-    public (int, int) toMove { get; set; }
-
-    public PieceChanges((int,int)fromMove, (int, int) toMove)
-    {
-        this.fromMove = fromMove;
-        this.toMove = toMove;
     }
 }
