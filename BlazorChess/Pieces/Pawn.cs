@@ -1,42 +1,43 @@
 ﻿using BlazorChess.Data;
+using MudBlazor.Extensions;
 
 namespace BlazorChess.Pieces
 {
     public class Pawn : Piece
     {
-        public Pawn(Color color, int pieceValue, string? icon, string? position) : base(color, pieceValue, icon, position)
+        public bool ableToEnPassant { get; set; }
+        public Pawn(Color color, int pieceValue, string? icon, string? position, bool ableToEnPassant = false) : base(color, pieceValue, icon, position)
         {
-        }
-
-        public Pawn(Piece piece) : base(piece)
-        {
+            this.ableToEnPassant = ableToEnPassant;
         }
 
         public override bool[,] calculatePossibleMoves(Piece[,] board, bool[,] availableMoves)
         {
-            (int row, int col) = this.getPositionTuple();
-            if (row == 7 || row == 0) return availableMoves;
+            (int row, int col) = getPositionTuple();
+            if (row == 7 || row == 0)
+                return availableMoves;
 
-            bool isWhiteTurn = this.Color == Color.White;
+            bool isWhiteTurn = Color == Color.White;
             int forwardDirection = isWhiteTurn ? -1 : 1;
             int startingRow = isWhiteTurn ? 6 : 1;
+            int enPassantRow = isWhiteTurn ? 3 : 4;
 
             int leftDiagonalCol = col - 1;
             int rightDiagonalCol = col + 1;
 
             if (isValidMove(board, row + forwardDirection, col, isWhiteTurn))
             {
-                availableMoves[row + forwardDirection, col] = true;
+                markMove(availableMoves, row + forwardDirection, col);
             }
 
             if (isValidCapture(board, row + forwardDirection, leftDiagonalCol, isWhiteTurn))
             {
-                availableMoves[row + forwardDirection, leftDiagonalCol] = true;
+                markMove(availableMoves, row + forwardDirection, leftDiagonalCol);
             }
 
             if (isValidCapture(board, row + forwardDirection, rightDiagonalCol, isWhiteTurn))
             {
-                availableMoves[row + forwardDirection, rightDiagonalCol] = true;
+                markMove(availableMoves, row + forwardDirection, rightDiagonalCol);
             }
 
             if (row == startingRow)
@@ -44,14 +45,16 @@ namespace BlazorChess.Pieces
                 int doubleMoveRow = row + 2 * forwardDirection;
                 if (isValidMove(board, doubleMoveRow, col, isWhiteTurn) && board[row + forwardDirection, col].PieceValue == 0)
                 {
-                    availableMoves[doubleMoveRow, col] = true;
+                    markMove(availableMoves, doubleMoveRow, col);
                 }
             }
+
+            handleEnPassant(board, availableMoves, row, col, forwardDirection, enPassantRow);
 
             return base.calculatePossibleMoves(board, availableMoves);
         }
 
-        private bool isValidMove(Piece[,] board, int row, int col, bool isWhiteTurn)
+        private static bool isValidMove(Piece[,] board, int row, int col, bool isWhiteTurn)
         {
             if (row >= 0 && row < 8 && col >= 0 && col < 8)
             {
@@ -63,7 +66,7 @@ namespace BlazorChess.Pieces
             return false;
         }
 
-        private bool isValidCapture(Piece[,] board, int row, int col, bool isWhiteTurn)
+        private static bool isValidCapture(Piece[,] board, int row, int col, bool isWhiteTurn)
         {
             if (row >= 0 && row < 8 && col >= 0 && col < 8)
             {
@@ -79,6 +82,30 @@ namespace BlazorChess.Pieces
                 }
             }
             return false;
+        }
+        private void handleEnPassant(Piece[,] board, bool[,] availableMoves, int row, int col, int forwardDirection, int enPassantRow)
+        {
+            if (row == enPassantRow)
+            {
+                int leftCol = col - 1;
+                int rightCol = col + 1;
+
+                checkEnPassantCapture(board, availableMoves, row, leftCol, forwardDirection);
+                checkEnPassantCapture(board, availableMoves, row, rightCol, forwardDirection);
+            }
+        }
+
+        private void checkEnPassantCapture(Piece[,] board, bool[,] availableMoves, int row, int col, int forwardDirection)
+        {
+            if (col >= 0 && col < 8 && board[row, col] is Pawn && board[row, col].As<Pawn>().ableToEnPassant)
+            {
+                markMove(availableMoves, row + forwardDirection, col);
+            }
+        }
+
+        private static void markMove(bool[,] availableMoves, int row, int col)
+        {
+            availableMoves[row, col] = true;
         }
 
 
@@ -107,6 +134,22 @@ namespace BlazorChess.Pieces
         public override string getFENRepresentation()
         {
             return Color == Color.White ? "P" : "p";
+        }
+
+        public override void setPosition(string? position)
+        {
+            int newRow = int.Parse(position![..1]);
+            var oldRow = this.getPositionTuple().row;
+            if (oldRow == (this.Color == Color.White ? 6 : 1) && newRow == (this.Color == Color.White ? 4 : 3))
+            {
+                this.ableToEnPassant = true;
+            }
+            else
+            {
+                this.ableToEnPassant = false;
+            }
+
+            base.setPosition(position);
         }
     }
 }

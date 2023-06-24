@@ -1,4 +1,5 @@
 ﻿using BlazorChess.Pieces;
+using MudBlazor.Extensions;
 
 namespace BlazorChess.Data
 {
@@ -19,6 +20,12 @@ namespace BlazorChess.Data
                     if (piece is King)
                     {
                         (kingRow, kingCol) = piece.getPositionTuple();
+                    }
+
+                    // after the current player moved anything, every en passant opportunity dissapear from the table
+                    if (piece is Pawn)
+                    {
+                        piece.As<Pawn>().ableToEnPassant = false;
                     }
                 }
             }

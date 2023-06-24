@@ -34,21 +34,17 @@
 
     <MudItem xs="12" sm="12" md="6" lg="6" xl="6" xxl="6">
         <MudPaper Width="75%" Style="margin-left:auto; margin-right:auto">
-            @*<MudText Align="Align.Center" Typo="Typo.h3">@((player.IsMyTurn) ? "Your Turn" : "Opponents Turn")</MudText>*@
             <div style="max-height: 50% !important; height: 300px; overflow-y: auto;">
                 <MudList Dense>
                     <MudGrid Style="width: 100%">
                         @foreach (PieceChange item in pieceChanges)
                         {
-                            @*<MudItem Style="width:100%; padding-top: 2px; padding-bottom: 2px" xs="2" sm="2" md="2" lg="2" xl="2" xxl="2">
-                                <MudListItem Style="padding-top: 0px; padding-bottom: 0px;">
-                                    <MudText Align="Align.Left" Typo="Typo.h6">@moveCounter</MudText>
-                                </MudListItem>
-                            </MudItem>*@
-                            <MudItem Style="width:100%; padding-top: 2px; padding-bottom: 2px" xs="4" sm="4" md="4" lg="4" xl="4" xxl="4">
+                            <MudItem Style="width:100%; padding-top: 2px; padding-bottom: 2px" xs="6" sm="6" md="6" lg="6" xl="6" xxl="6">
                                 <MudListItem Style="padding-top: 0px; padding-bottom: 0px;">
                                     <MudText Align="Align.Left" Typo="Typo.h6">@convertMoveToString(item)</MudText>
                                 </MudListItem>
+                                <MudDivider Vertical="true" FlexItem="true" />
+                                <MudDivider />
                             </MudItem>
                         }
                     </MudGrid>

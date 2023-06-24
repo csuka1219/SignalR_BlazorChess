@@ -5,6 +5,7 @@ using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 using MudBlazor;
+using MudBlazor.Extensions;
 using System.Data;
 
 namespace BlazorChess.Pages
@@ -93,7 +94,7 @@ namespace BlazorChess.Pages
             int row = s[0] - '0';
             int col = s[1] - '0';
 
-            // Create a stale array to track stalemate positions
+            // Create a stale array to track stale positions
             bool[,] staleArray = new bool[8, 8];
 
             // Iterate over each piece on the chessboard
@@ -155,7 +156,7 @@ namespace BlazorChess.Pages
             pieceChanges.Add(new PieceChange((oldRow, oldCol), (newRow, newCol), piece.Item.PieceValue, hitpieceValue));
 
             // Set the piece on the chessboard to the new position
-            chessBoard.SetPiece(newRow, newCol, piece.Item);
+            chessBoard.setPiece(newRow, newCol, piece.Item, list);
 
             // Set the dragEnded flag to true
             dragEnded = true;
@@ -179,7 +180,7 @@ namespace BlazorChess.Pages
             // Toggle the turn for the player
             player.IsMyTurn = !player.IsMyTurn;
 
-            // Check if the game is in a stalemate state
+            // Check if the game is in a checkmate state
             isStale = checkMate || Stale.staleChecker(chessBoard.board, whiteTurn);
 
             // Check if the game is in checkmate state

@@ -146,6 +146,18 @@ namespace BlazorChess.Data
                 }
             }
         }
+        public static bool canPerformCastling(Piece piece, int row, int col)
+        {
+            if (piece is King king && king.ableToCastling)
+            {
+                List<string> castlingPositions = new List<string> { "72", "76", "02", "06" };
+                string position = $"{row}{col}";
+                return castlingPositions.Contains(position);
+            }
+
+            return false;
+        }
+
 
         private static void setRookCastlingAvailability(Piece[,] board, Color color, char rookFEN, bool ableToCastle)
         {

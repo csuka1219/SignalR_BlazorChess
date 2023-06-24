@@ -1,5 +1,6 @@
 ﻿using BlazorChess.Data;
 using BlazorChess.Pieces;
+using BlazorChess.Rules;
 using MudBlazor;
 using MudBlazor.Extensions;
 using Color = BlazorChess.Pieces.Color;
@@ -14,11 +15,11 @@ namespace BlazorChess.Game
         public Chessboard()
         {
             // Initialize the chessboard with the starting position
-            Initialize();
+            initialize();
         }
 
         // Initialize the chessboard with the starting position
-        private void Initialize()
+        private void initialize()
         {
             // Place the white pieces
             board[7, 0] = new Rook(Color.White, PieceConstants.whiteRookValue, "Images/wR.svg", "70");
@@ -58,26 +59,30 @@ namespace BlazorChess.Game
             }
         }
 
-        public void SetPiece(int row, int col, Piece piece)
+        public void setPiece(int row, int col, Piece piece, IEnumerable<Piece> list)
         {
-            // Check if the piece is a King and is eligible for castling, and if the destination position is one of the castling positions
-            if (piece is King && piece.As<King>().ableToCastling && new List<string> { "72", "76", "02", "06" }.Contains($"{row}{col}"))
+            if (Castling.canPerformCastling(piece, row, col))
             {
-                // Perform the castling move
-                Castling.castling(this, $"{row}{col}");
+                performCastling(row, col);
             }
 
-            // Extract the old row and column from the current position of the piece
+            if (EnPassant.isEnPassant(piece, row, col))
+            {
+                EnPassant.performEnPassant(board, piece, row, col, list);
+            }
+
             int oldRow = int.Parse(piece.Position![..1]);
             int oldCol = int.Parse(piece.Position!.Substring(1, 1));
 
-            // Set the new position for the piece
             piece.setPosition($"{row}{col}");
 
-            // Update the chessboard by replacing the old position with an EmptyPiece and setting the new position with the piece
             board[oldRow, oldCol] = new EmptyPiece();
             board[row, col] = piece;
         }
 
+        private void performCastling(int row, int col)
+        {
+            Castling.castling(this, $"{row}{col}");
+        }
     }
 }

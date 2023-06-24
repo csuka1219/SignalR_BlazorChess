@@ -47,7 +47,7 @@ namespace BlazorChess.Pieces
             this.Position = position;
         }
 
-        public (int, int) getPositionTuple()
+        public (int row, int col) getPositionTuple()
         {
             int row = int.Parse(this.Position![..1]);
             int col = int.Parse(this.Position!.Substring(1, 1));
