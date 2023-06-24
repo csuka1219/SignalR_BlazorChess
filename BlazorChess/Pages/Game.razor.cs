@@ -39,6 +39,7 @@ namespace BlazorChess.Pages
         public string lastposition = "";
 
         private HubConnection hubConnection;
+
         protected override async Task OnInitializedAsync()
         {
             // Convert the chessboard pieces to a list for UI component
@@ -48,6 +49,9 @@ namespace BlazorChess.Pages
             hubConnection = new HubConnectionBuilder()
                 .WithUrl(navigationManager!.ToAbsoluteUri("/chessHub"))
                 .Build();
+
+            // Start the hub connection
+            await hubConnection.StartAsync();
 
             // Register a callback for receiving moves from the hub
             hubConnection.On<int, int, int, int>("ReceiveMove", (fromX, fromY, toX, toY) =>
@@ -71,9 +75,6 @@ namespace BlazorChess.Pages
             {
                 isStarted = true;
             });
-
-            // Start the hub connection
-            await hubConnection.StartAsync();
 
             // Join the game
             await joinGame();
@@ -307,6 +308,12 @@ namespace BlazorChess.Pages
                     pieceChanges = UserHandler.getMatchInfoMoves(gameName);
                     list = chessBoard.board.Cast<Piece>().ToList();
                     bool isWhitePlayer = UserHandler.connectedPlayers[gameName].First() == uniqueGuid;
+
+                    if (UserHandler.connectedPlayers[gameName].Count == 2)
+                    {
+                        isStarted = true;
+                    }
+
                     player.IsMyTurn = isWhitePlayer == UserHandler.matchInfos[gameName].isWhiteTurn;
                     whiteTurn = UserHandler.matchInfos[gameName].isWhiteTurn;
                     StateHasChanged();

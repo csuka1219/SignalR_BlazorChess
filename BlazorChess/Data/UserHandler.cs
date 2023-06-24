@@ -119,17 +119,17 @@ namespace BlazorChess.Data
             switch (char.ToLower(fen))
             {
                 case 'r':
-                    return new Rook(color, isWhite ? PieceConstants.whiteRookValue: PieceConstants.blackRookValue, Icons.Custom.Uncategorized.ChessRook, $"{row}{col}", ableToCastling: false);
+                    return new Rook(color, isWhite ? PieceConstants.whiteRookValue : PieceConstants.blackRookValue, isWhite ? "Images/wR.svg" : "Images/bR.svg", $"{row}{col}", ableToCastling: false);
                 case 'n':
-                    return new Knight(color, isWhite ? PieceConstants.whiteKnightValue : PieceConstants.blackKnightValue, Icons.Custom.Uncategorized.ChessKnight, $"{row}{col}");
+                    return new Knight(color, isWhite ? PieceConstants.whiteKnightValue : PieceConstants.blackKnightValue, isWhite ? "Images/wN.svg" : "Images/bN.svg", $"{row}{col}");
                 case 'b':
-                    return new Bishop(color, isWhite ? PieceConstants.whiteBishopValue : PieceConstants.blackBishopValue, Icons.Custom.Uncategorized.ChessBishop, $"{row}{col}");
+                    return new Bishop(color, isWhite ? PieceConstants.whiteBishopValue : PieceConstants.blackBishopValue, isWhite ? "Images/wB.svg" : "Images/bB.svg", $"{row}{col}");
                 case 'q':
-                    return new Queen(color, isWhite ? PieceConstants.whiteQueenValue : PieceConstants.blackQueenValue, Icons.Custom.Uncategorized.ChessQueen, $"{row}{col}");
+                    return new Queen(color, isWhite ? PieceConstants.whiteQueenValue : PieceConstants.blackQueenValue, isWhite ? "Images/wQ.svg" : "Images/bQ.svg", $"{row}{col}");
                 case 'k':
-                    return new King(color, isWhite ? PieceConstants.whiteKingValue : PieceConstants.blackKingValue, Icons.Custom.Uncategorized.ChessKing, $"{row}{col}", ableToCastling: false);
+                    return new King(color, isWhite ? PieceConstants.whiteKingValue : PieceConstants.blackKingValue, isWhite ? "Images/wK.svg" : "Images/bK.svg", $"{row}{col}", ableToCastling: false);
                 case 'p':
-                    return new Pawn(color, isWhite ? PieceConstants.whitePawnValue : PieceConstants.blackPawnValue, Icons.Custom.Uncategorized.ChessPawn, $"{row}{col}");
+                    return new Pawn(color, isWhite ? PieceConstants.whitePawnValue : PieceConstants.blackPawnValue, isWhite ? "Images/wP.svg" : "Images/bP.svg", $"{row}{col}");
                 default:
                     return new EmptyPiece();
             }
