@@ -34,9 +34,9 @@ namespace BlazorChess.Pages
         public bool whiteTurn = true;
         public bool lastTurn = true;
         public bool isStale = false;
+        private bool isStarted = false;
 		bool dragEnded = true;
         public string lastposition = "";
-        private int moveCounter = 0;
 
         private HubConnection hubConnection;
         protected override async Task OnInitializedAsync()
@@ -67,6 +67,11 @@ namespace BlazorChess.Pages
                 }
             });
 
+            hubConnection.On("Joined", () =>
+            {
+                isStarted = true;
+            });
+
             // Start the hub connection
             await hubConnection.StartAsync();
 
@@ -77,7 +82,7 @@ namespace BlazorChess.Pages
         public bool canDrop(Piece selectedPiece, string s)
         {
             // Check if it's not the player's turn or the piece is not within the valid range for the current turn
-            if (!player.IsMyTurn || (!whiteTurn && selectedPiece.PieceValue < PieceConstants.blackPawnValue) || (whiteTurn && selectedPiece.PieceValue > PieceConstants.whiteKingValue))
+            if (!isStarted || !player.IsMyTurn || (!whiteTurn && selectedPiece.PieceValue < PieceConstants.blackPawnValue) || (whiteTurn && selectedPiece.PieceValue > PieceConstants.whiteKingValue))
             {
                 return false;
             }
@@ -313,6 +318,7 @@ namespace BlazorChess.Pages
                     // Add the current player to the connected players list and set the turn to false
                     UserHandler.connectedPlayers[gameName].Add(uniqueGuid);
                     player.IsMyTurn = false;
+                    isStarted = true;
                 }
             }
             else
@@ -329,7 +335,6 @@ namespace BlazorChess.Pages
         {
             // Send a move piece request to the hub with the game name and coordinates of the move
             await hubConnection.SendAsync("MovePiece", gameName, fromRow, fromCol, toRow, toCol);
-            moveCounter++;
         }
 
         private string getCellCss(int index)

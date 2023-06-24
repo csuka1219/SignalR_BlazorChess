@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using MudBlazor;
 
 namespace BlazorChess.Game
 {
@@ -12,6 +13,7 @@ namespace BlazorChess.Game
 		public async Task JoinGame(string groupName)
 		{
 			await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
+            await Clients.GroupExcept(groupName, Context.ConnectionId).SendAsync("Joined");
         }
 
         public async Task LeaveGame(string groupName)
