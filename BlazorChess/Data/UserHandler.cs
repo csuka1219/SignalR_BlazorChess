@@ -6,39 +6,39 @@ using System.Text;
 
 namespace BlazorChess.Data
 {
-    public static class UserHandler
+    public class UserHandler
     {
-        public static Dictionary<string, List<string>> connectedPlayers = new Dictionary<string, List<string>>();
-        public static Dictionary<string, MatchInfo> matchInfos = new Dictionary<string, MatchInfo>();
+        public Dictionary<string, List<string>> connectedPlayers = new Dictionary<string, List<string>>();
+        public Dictionary<string, MatchInfo> matchInfos = new Dictionary<string, MatchInfo>();
 
-        public static List<string> getConnectedPlayerKeys()
+        public List<string> getConnectedPlayerKeys()
         {
             return connectedPlayers.Where(cp => cp.Value.Count == 1).Select(cp => cp.Key).ToList();
         }
 
-        public static void setMatchInfoMoves(string gameName, List<PieceChange> pieceChanges, bool isWhiteTurn)
+        public void setMatchInfoMoves(string gameName, List<PieceChange> pieceChanges, bool isWhiteTurn)
         {
             matchInfos[gameName].pieceChanges = new List<PieceChange>(pieceChanges);
             matchInfos[gameName].isWhiteTurn = isWhiteTurn;
         }
 
-        public static void setMatchInfoBoard(string gameName, Piece[,] board)
+        public void setMatchInfoBoard(string gameName, Piece[,] board)
         {
             string boardString = convertBoardToString(board);
             matchInfos[gameName].boardInfo = boardString;
         }
 
-        public static Piece[,] getMatchInfoBoard(string gameName)
+        public Piece[,] getMatchInfoBoard(string gameName)
         {
             return convertStringToBoard(matchInfos[gameName].boardInfo);
         }
 
-        public static List<PieceChange> getMatchInfoMoves(string gameName)
+        public List<PieceChange> getMatchInfoMoves(string gameName)
         {
             return matchInfos[gameName].pieceChanges;
         }
 
-        private static string convertBoardToString(Piece[,] board)
+        private string convertBoardToString(Piece[,] board)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -84,7 +84,7 @@ namespace BlazorChess.Data
             return sb.ToString();
         }
 
-        private static Piece[,] convertStringToBoard(string boardString)
+        private Piece[,] convertStringToBoard(string boardString)
         {
             Piece[,] board = new Piece[8, 8];
 
@@ -111,7 +111,7 @@ namespace BlazorChess.Data
             return board;
         }
    
-        private static Piece createPieceFromFEN(char fen,int row,int col)
+        private Piece createPieceFromFEN(char fen,int row,int col)
         {
             Pieces.Color color = char.IsUpper(fen) ? Pieces.Color.White : Pieces.Color.Black;
             bool isWhite = color == Pieces.Color.White;

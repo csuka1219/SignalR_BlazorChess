@@ -13,6 +13,8 @@ namespace BlazorChess.Pages
         [Inject]
         private IDialogService? dialogService { get; set; }
 
+        [Inject]
+        private UserHandler userHandler { get; set; }
 
         private string searchString = "";
         private List<string> games = new List<string>();
@@ -25,7 +27,7 @@ namespace BlazorChess.Pages
 
         private void refreshLobby()
         {
-            games = UserHandler.getConnectedPlayerKeys();
+            games = userHandler.getConnectedPlayerKeys();
         }
 
         private async void createGame()

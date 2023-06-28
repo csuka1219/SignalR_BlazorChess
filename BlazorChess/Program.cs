@@ -13,6 +13,7 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
 builder.Services.AddSignalR();
 builder.Services.AddBlazoredLocalStorage();
+builder.Services.AddSingleton<UserHandler,UserHandler>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

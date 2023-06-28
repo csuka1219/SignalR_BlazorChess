@@ -21,6 +21,9 @@ namespace BlazorChess.Pages
 		[Inject]
 		private NavigationManager? navigationManager { get; set; }
 
+        [Inject]
+        private UserHandler userHandler { get; set; }
+
         [Parameter]
         public string gameName { get; set; } = string.Empty;
 
@@ -34,7 +37,7 @@ namespace BlazorChess.Pages
         public bool whiteTurn = true;
         public bool lastTurn = true;
         public bool isStale = false;
-        private bool isStarted = false;
+        private bool ableToMove = false;
 		bool dragEnded = true;
         public string lastposition = "";
 
@@ -48,6 +51,7 @@ namespace BlazorChess.Pages
             // Create a new hub connection for the chess game
             hubConnection = new HubConnectionBuilder()
                 .WithUrl(navigationManager!.ToAbsoluteUri("/chessHub"))
+                //.WithUrl("http://171.22.125.38:8080/chessHub")
                 .Build();
 
             // Start the hub connection
@@ -73,7 +77,7 @@ namespace BlazorChess.Pages
 
             hubConnection.On("Joined", () =>
             {
-                isStarted = true;
+                ableToMove = true;
             });
 
             // Join the game
@@ -83,7 +87,7 @@ namespace BlazorChess.Pages
         public bool canDrop(Piece selectedPiece, string s)
         {
             // Check if it's not the player's turn or the piece is not within the valid range for the current turn
-            if (!isStarted || !player.IsMyTurn || (!whiteTurn && selectedPiece.PieceValue < PieceConstants.blackPawnValue) || (whiteTurn && selectedPiece.PieceValue > PieceConstants.whiteKingValue))
+            if (!ableToMove || !player.IsMyTurn || (!whiteTurn && selectedPiece.PieceValue < PieceConstants.blackPawnValue) || (whiteTurn && selectedPiece.PieceValue > PieceConstants.whiteKingValue))
             {
                 return false;
             }
@@ -131,7 +135,7 @@ namespace BlazorChess.Pages
                 dragEnded = false;
                 lastposition = selectedPiece.Position!;
                 lastTurn = whiteTurn;
-                removeInvalidMoves(selectedPiece, row, col);
+                removeInvalidMoves(selectedPiece);
             }
 
             // Check if the specified row and column are valid moves
@@ -207,8 +211,9 @@ namespace BlazorChess.Pages
             }
         }
 
-        public void removeInvalidMoves(Piece piece, int row, int col)
+        public void removeInvalidMoves(Piece piece)
         {
+            (int row, int col) = piece.getPositionTuple();
             // Iterate over each cell on the chessboard
             for (int newRow = 0; newRow < 8; newRow++)
             {
@@ -219,7 +224,6 @@ namespace BlazorChess.Pages
                     {
                         // Store the piece that might be captured in the destination cell
                         Piece lastHitPiece = chessBoard.board[newRow, newCol];
-
                         // Move the piece to the new cell and update its position
                         chessBoard.board[newRow, newCol] = piece;
                         chessBoard.board[newRow, newCol].setPosition($"{row}{col}", true);
@@ -289,33 +293,33 @@ namespace BlazorChess.Pages
             string uniqueGuid = await localStorage.GetItemAsync<string>("uniqueGuid");
 
             // Join the new game
-            await hubConnection.SendAsync("JoinGame", gameName);
+            await hubConnection.SendAsync("joinGame", gameName);
 
             // Check if there are already connected players for the game
-            if (UserHandler.connectedPlayers.ContainsKey(gameName))
+            if (userHandler.connectedPlayers.ContainsKey(gameName))
             {
-                if (UserHandler.connectedPlayers[gameName].Count > 1 && !UserHandler.connectedPlayers[gameName].Contains(uniqueGuid))
+                if (userHandler.connectedPlayers[gameName].Count > 1 && !userHandler.connectedPlayers[gameName].Contains(uniqueGuid))
                 {
                     navigationManager!.NavigateTo("/");
                     return;
                 }
                 // Check if the current player is already connected to the game
-                if (UserHandler.connectedPlayers[gameName].Contains(uniqueGuid))
+                if (userHandler.connectedPlayers[gameName].Contains(uniqueGuid))
                 {
                     // The player is refreshing or renavigating
                     // Update the chessboard, pieces list, and player turn
-                    chessBoard.board = UserHandler.getMatchInfoBoard(gameName);
-                    pieceChanges = UserHandler.getMatchInfoMoves(gameName);
+                    chessBoard.board = userHandler.getMatchInfoBoard(gameName);
+                    pieceChanges = userHandler.getMatchInfoMoves(gameName);
                     list = chessBoard.board.Cast<Piece>().ToList();
-                    bool isWhitePlayer = UserHandler.connectedPlayers[gameName].First() == uniqueGuid;
+                    bool isWhitePlayer = userHandler.connectedPlayers[gameName].First() == uniqueGuid;
 
-                    if (UserHandler.connectedPlayers[gameName].Count == 2)
+                    if (userHandler.connectedPlayers[gameName].Count == 2)
                     {
-                        isStarted = true;
+                        ableToMove = true;
                     }
 
-                    player.IsMyTurn = isWhitePlayer == UserHandler.matchInfos[gameName].isWhiteTurn;
-                    whiteTurn = UserHandler.matchInfos[gameName].isWhiteTurn;
+                    player.IsMyTurn = isWhitePlayer == userHandler.matchInfos[gameName].isWhiteTurn;
+                    whiteTurn = userHandler.matchInfos[gameName].isWhiteTurn;
                     StateHasChanged();
                     _container.Refresh();
                 }
@@ -323,17 +327,18 @@ namespace BlazorChess.Pages
                 {
                     // The second player has connected
                     // Add the current player to the connected players list and set the turn to false
-                    UserHandler.connectedPlayers[gameName].Add(uniqueGuid);
+                    userHandler.connectedPlayers[gameName].Add(uniqueGuid);
                     player.IsMyTurn = false;
-                    isStarted = true;
+                    ableToMove = true;
+                    await hubConnection.SendAsync("startGame", gameName);
                 }
             }
             else
             {
                 // First player to connect to the game
                 // Create new entries for connected players and match information
-                UserHandler.connectedPlayers.Add(gameName, new List<string>() { uniqueGuid });
-                UserHandler.matchInfos.Add(gameName, new MatchInfo());
+                userHandler.connectedPlayers.Add(gameName, new List<string>() { uniqueGuid });
+                userHandler.matchInfos.Add(gameName, new MatchInfo());
                 player.IsMyTurn = true;
             }
         }
@@ -341,7 +346,7 @@ namespace BlazorChess.Pages
         private async Task HandleMove(int fromRow, int fromCol, int toRow, int toCol)
         {
             // Send a move piece request to the hub with the game name and coordinates of the move
-            await hubConnection.SendAsync("MovePiece", gameName, fromRow, fromCol, toRow, toCol);
+            await hubConnection.SendAsync("movePiece", gameName, fromRow, fromCol, toRow, toCol);
         }
 
         private string getCellCss(int index)
@@ -351,11 +356,12 @@ namespace BlazorChess.Pages
         }
 
         // Implementation of the IDisposable interface to perform cleanup when the object is disposed
-        public void Dispose()
+        public async void Dispose()
         {
             // Update the match information with the current state of the chessboard
-            UserHandler.setMatchInfoBoard(gameName, chessBoard.board);
-            UserHandler.setMatchInfoMoves(gameName, pieceChanges, whiteTurn);
+            userHandler.setMatchInfoBoard(gameName, chessBoard.board);
+            userHandler.setMatchInfoMoves(gameName, pieceChanges, whiteTurn);
+            await hubConnection.SendAsync("leaveGame", gameName);
         }
 
     }
