@@ -5,7 +5,6 @@ using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 using MudBlazor;
-using MudBlazor.Extensions;
 using System.Data;
 
 namespace BlazorChess.Pages
@@ -50,8 +49,8 @@ namespace BlazorChess.Pages
 
             // Create a new hub connection for the chess game
             hubConnection = new HubConnectionBuilder()
-                .WithUrl(navigationManager!.ToAbsoluteUri("/chessHub"))
-                //.WithUrl("http://171.22.125.38:8080/chessHub")
+                //.WithUrl(navigationManager!.ToAbsoluteUri("/chessHub"))
+                .WithUrl("http://localhost/chessHub")
                 .Build();
 
             // Start the hub connection
@@ -208,6 +207,7 @@ namespace BlazorChess.Pages
                     // InitGame();
                     StateHasChanged();
                 }
+                ableToMove = false;
             }
         }
 
@@ -319,6 +319,7 @@ namespace BlazorChess.Pages
                     }
 
                     player.IsMyTurn = isWhitePlayer == userHandler.matchInfos[gameName].isWhiteTurn;
+                    player.isWhitePlayer = isWhitePlayer;
                     whiteTurn = userHandler.matchInfos[gameName].isWhiteTurn;
                     StateHasChanged();
                     _container.Refresh();
@@ -329,6 +330,7 @@ namespace BlazorChess.Pages
                     // Add the current player to the connected players list and set the turn to false
                     userHandler.connectedPlayers[gameName].Add(uniqueGuid);
                     player.IsMyTurn = false;
+                    player.isWhitePlayer = false;
                     ableToMove = true;
                     await hubConnection.SendAsync("startGame", gameName);
                 }
@@ -340,6 +342,7 @@ namespace BlazorChess.Pages
                 userHandler.connectedPlayers.Add(gameName, new List<string>() { uniqueGuid });
                 userHandler.matchInfos.Add(gameName, new MatchInfo());
                 player.IsMyTurn = true;
+                player.isWhitePlayer = true;
             }
         }
 
@@ -353,6 +356,32 @@ namespace BlazorChess.Pages
         {
             string backgroundColor = index % 2 == 0 ? "#eeeed2" : "#769656";
             return "height:64px; width:64px; background-color:" + backgroundColor;
+        }
+
+        private string getPlayerTableView()
+        {
+            if (userHandler.connectedPlayers.ContainsKey(gameName) && userHandler.connectedPlayers[gameName].Count == 1)
+            {
+                return "";
+            }
+            if (userHandler.connectedPlayers.ContainsKey(gameName) && userHandler.connectedPlayers[gameName].Count == 2)
+            {
+                return player.isWhitePlayer ? "" : "transform: scaleY(-1);";
+            }
+            return "transform: scaleY(-1);";
+        }
+
+        private string getPlayerPieceView()
+        {
+            if (userHandler.connectedPlayers.ContainsKey(gameName) && userHandler.connectedPlayers[gameName].Count == 1)
+            {
+                return "transform: scaleY(-1);";
+            }
+            else if (userHandler.connectedPlayers.ContainsKey(gameName) && userHandler.connectedPlayers[gameName].Count == 2)
+            {
+                return player.isWhitePlayer ? "" : "transform: scaleY(-1);";
+            }
+            return "";
         }
 
         // Implementation of the IDisposable interface to perform cleanup when the object is disposed
