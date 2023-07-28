@@ -2,7 +2,7 @@
 
 SignalR_BlazorChess is a multiplayer chess application built using Blazor Server, MudBlazor for the UI components, and SignalR for enabling real-time multiplayer functionality. This application allows chess enthusiasts to play against each other in a virtual environment and enjoy the strategic and intellectual challenges that the game of chess offers.
 
-![Made with Blazor]([https://img.shields.io/badge/Made%20with-Flutter-blue.svg](https://img.shields.io/badge/blazor-%235C2D91.svg?style=for-the-badge&logo=blazor&logoColor=white)
+![Blazor](https://img.shields.io/badge/blazor-%235C2D91.svg?style=for-the-badge&logo=blazor&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Open Source Love](https://badges.frapsoft.com/os/v2/open-source.svg?v=103)
 ![GitHub stars](https://img.shields.io/github/stars/csuka1219/SignalR_BlazorChess.svg?style=social&label=Star)
