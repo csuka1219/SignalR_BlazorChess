@@ -1,7 +1,3 @@
-# SignalR_BlazorChess
- 
-Implemented complete chess rules functionality, enabling gameplay on a single PC. Next, I plan to integrate SignalR for online multiplayer capabilities.
-
 # SignalR_BlazorChess - Multiplayer Chess Application
 
 SignalR_BlazorChess is a multiplayer chess application built using Blazor Server, MudBlazor for the UI components, and SignalR for enabling real-time multiplayer functionality. This application allows chess enthusiasts to play against each other in a virtual environment and enjoy the strategic and intellectual challenges that the game of chess offers.
