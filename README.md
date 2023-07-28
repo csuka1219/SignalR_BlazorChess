@@ -24,6 +24,7 @@ There are still some features and improvements that could be made to this app. I
 - The design could be better
 - Add draw and resign option
 - Add timer, and time modes
+- Add chat
 - You can implement any new features you desire.
 
 
