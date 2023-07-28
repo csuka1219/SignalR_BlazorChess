@@ -15,7 +15,7 @@ SignalR_BlazorChess aims to provide a seamless and enjoyable multiplayer chess e
 
 [Live Demo](http://171.22.125.38:8080)
 
-![Demo Screenshot](BlazorChess/screenshots/demo.png)
+![Demo Screenshot](BlazorChess/screenshots/ingame.png)
 
 ## Contributing
 There are still some features and improvements that could be made to this app. If you would like to contribute, please feel free to fork the repository and create a pull request. Here are some things that could be improved:
