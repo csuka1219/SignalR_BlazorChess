@@ -13,7 +13,7 @@ SignalR_BlazorChess aims to provide a seamless and enjoyable multiplayer chess e
 
 ## Demo
 
-[Live Demo](http://171.22.125.38:8080)
+[Live Demo](http://89.116.106.200:8080)
 
 ![Demo Screenshot](BlazorChess/screenshots/ingame.png)
 
