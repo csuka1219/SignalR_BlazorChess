@@ -1,11 +1,12 @@
 ﻿@page "/game/{gameName}"
 @using BlazorChess.Data;
 @using BlazorChess.Pieces;
+@using BlazorChess.Utilities
 
 <MudGrid>
     <MudItem Style="@getPlayerTableView()" xs="12" sm="12" md="6" lg="6" xl="6" xxl="6">
-        <MudDropContainer T="Piece" Style="max-width: 515px; margin: auto auto;" @ref="_container" Items="@piecesOnBoard" CanDropClass="mud-border-info" NoDropClass="mud-border-error"
-                          CanDrop="@( (item,identifier ) => canDrop(item,identifier))"
+        <MudDropContainer T="Piece" Style="max-width: 515px; margin: auto auto;" @ref="ChessGameService._container" Items="@ChessGameService.piecesOnBoard" CanDropClass="mud-border-info" NoDropClass="mud-border-error"
+                          CanDrop="@( (item,identifier ) => ChessGameService.canMovePiece(item,identifier))"
             ItemsSelector="@((item,dropzone) => item.Position == dropzone)" ItemDropped="pieceUpdated" 
             Class="border-2 border-solid mud-border-lines-default">
             <ChildContent>           
@@ -35,11 +36,11 @@
             <div style="max-height: 50% !important; height: 300px; overflow-y: auto;">
                 <MudList Dense>
                     <MudGrid Style="width: 100%">
-                        @foreach (PieceChange item in pieceChanges)
+                        @foreach (PieceChange item in ChessGameService.pieceChanges)
                         {
                             <MudItem Style="width:100%; padding-top: 2px; padding-bottom: 2px" xs="6" sm="6" md="6" lg="6" xl="6" xxl="6">
                                 <MudListItem Style="padding-top: 0px; padding-bottom: 0px;">
-                                    <MudText Align="Align.Left" Typo="Typo.h6">@convertMoveToString(item)</MudText>
+                                    <MudText Align="Align.Left" Typo="Typo.h6">@ChessNotationConverter.convertMoveToString(item)</MudText>
                                 </MudListItem>
                                 <MudDivider Vertical="true" FlexItem="true" />
                                 <MudDivider />

@@ -40,7 +40,7 @@ namespace BlazorChess.Data
                         Piece lastHitPiece = board[newRow, newCol];
                         MovePiece(board, piece, newRow, newCol, row, col);
 
-                        if (isWhiteTurn && Stale.staleChecker(board, isWhiteTurn))
+                        if (isWhiteTurn && Check.checkChecker(board, isWhiteTurn))
                         {
                             availableMoves[newRow, newCol] = false;
                         }
@@ -49,7 +49,7 @@ namespace BlazorChess.Data
                             UndoMove(board, lastHitPiece, newRow, newCol, row, col);
                             return true;
                         }
-                        if (!isWhiteTurn && Stale.staleChecker(board, isWhiteTurn))
+                        if (!isWhiteTurn && Check.checkChecker(board, isWhiteTurn))
                         {
                             availableMoves[newRow, newCol] = false;
                         }

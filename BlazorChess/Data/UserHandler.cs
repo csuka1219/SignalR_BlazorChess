@@ -8,8 +8,8 @@ namespace BlazorChess.Data
 {
     public class UserHandler : IUserHandler
     {
-        public Dictionary<string, List<string>> connectedPlayers = new Dictionary<string, List<string>>();
-        public Dictionary<string, MatchInfo> matchInfos = new Dictionary<string, MatchInfo>();
+        private Dictionary<string, List<string>> connectedPlayers = new Dictionary<string, List<string>>();
+        private Dictionary<string, MatchInfo> matchInfos = new Dictionary<string, MatchInfo>();
 
         public List<string> getConnectedPlayerKeys()
         {

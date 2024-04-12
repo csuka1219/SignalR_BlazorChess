@@ -1,5 +1,6 @@
 using BlazorChess.Data;
 using BlazorChess.Game;
+using BlazorChess.Services;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -13,7 +14,11 @@ builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
 builder.Services.AddSignalR();
 builder.Services.AddBlazoredLocalStorage();
+
 builder.Services.AddSingleton<IUserHandler,UserHandler>();
+builder.Services.AddScoped<ChessGameService>();
+builder.Services.AddScoped<GameHubService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

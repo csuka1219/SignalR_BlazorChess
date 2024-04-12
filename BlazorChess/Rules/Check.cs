@@ -3,9 +3,9 @@ using MudBlazor.Extensions;
 
 namespace BlazorChess.Data
 {
-    public static class Stale
+    public static class Check
     {
-        public static bool staleChecker(Piece[,] board, bool whiteTurn)
+        public static bool checkChecker(Piece[,] board, bool whiteTurn)
         {
             bool[,] staleArray = new bool[8, 8];
             int kingRow = -1, kingCol = -1;

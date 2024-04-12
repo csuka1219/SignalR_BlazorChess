@@ -1,11 +1,13 @@
 ﻿using BlazorChess.Data;
 using BlazorChess.Game;
 using BlazorChess.Pieces;
+using BlazorChess.Services;
 using Blazored.LocalStorage;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.SignalR.Client;
 using MudBlazor;
 using System.Data;
+using System.Xml;
 
 namespace BlazorChess.Pages
 {
@@ -23,268 +25,43 @@ namespace BlazorChess.Pages
         [Inject]
         private IUserHandler userHandler { get; set; } = default!;
 
+        [Inject]
+        private GameHubService gameHubService { get; set; } = default!;
+
+        [Inject]
+        private ChessGameService ChessGameService { get; set; } = default!;
+
         [Parameter]
         public string gameName { get; set; } = string.Empty;
 
-        private Chessboard chessBoard = new Chessboard();
-        private Player player = new Player();
-        IEnumerable<Piece> piecesOnBoard = new List<Piece>();
-        private MudDropContainer<Piece> _container = default!;
-        private List<PieceChange> pieceChanges = new List<PieceChange>();
-
-        bool[,] availableMoves = new bool[8, 8];
-        public bool whiteTurn = true;
-        public bool lastTurn = true;
-        public bool isStale = false;
-        private bool ableToMove = false;
-		bool dragEnded = true;
-        public string lastposition = "";
-
-        private HubConnection hubConnection = default!;
-
         protected override async Task OnInitializedAsync()
         {
-            // Convert the chessboard pieces to a list for UI component
-            piecesOnBoard = chessBoard.board.Cast<Piece>().ToList();
             // Create a new hub connection for the chess game
-            hubConnection = new HubConnectionBuilder()
-                //.WithUrl(navigationManager!.ToAbsoluteUri("/chessHub"))
-                //.WithUrl("http://localhost/chessHub")
-                .WithUrl("https://localhost:44355/chessHub")
-                .Build();
-
-            // Start the hub connection
-            await hubConnection.StartAsync();
-
-            // Register a callback for receiving moves from the hub
-            hubConnection.On<int, int, int, int>("ReceiveMove", (fromX, fromY, toX, toY) =>
-            {
-                // Check if it's not the player's turn
-                if (!player.IsMyTurn)
-                {
-                    // Create a MudItemDropInfo object representing the received move
-                    MudItemDropInfo<Piece> piece = new MudItemDropInfo<Piece>(piecesOnBoard.First(x => x.Position == $"{fromX}{fromY}"), $"{toX}{toY}", -1);
-
-                    // Handle the received move
-                    pieceUpdated(piece);
-
-                    // Update the chess board UI
-                    _container.Refresh();
-                    StateHasChanged();
-                }
-            });
-
-            hubConnection.On("Joined", () =>
-            {
-                ableToMove = true;
-            });
-
-            // Join the game
+            gameHubService.OnMoveReceived += handleMoveReceived;
+            gameHubService.OnJoined += handleJoined;
+            await gameHubService.startAsync();
             await joinGame();
         }
 
-        public bool canDrop(Piece selectedPiece, string s)
-        {
-            // Check if it's not the player's turn or the piece is not within the valid range for the current turn
-            if (!ableToMove || !player.IsMyTurn || (!whiteTurn && selectedPiece.PieceValue < PieceConstants.blackPawnValue) || (whiteTurn && selectedPiece.PieceValue > PieceConstants.whiteKingValue))
-            {
-                return false;
-            }
-
-            // Check if the turn and piece position match the previous turn and position, and the drag has not ended
-            if (whiteTurn == lastTurn && selectedPiece.Position != lastposition && !dragEnded)
-            {
-                // Reset available moves and end the drag
-                availableMoves = new bool[8, 8];
-                dragEnded = true;
-            }
-
-            // Extract the row and column from the string representation of the dropzone identifier
-            int row = s[0] - '0';
-            int col = s[1] - '0';
-
-            // Create a stale array to track stale positions
-            bool[,] staleArray = new bool[8, 8];
-
-            // Iterate over each piece on the chessboard
-            foreach (Piece piece in chessBoard.board)
-            {
-                // Check if the piece's color matches the opposite of the current turn
-                if (piece.Color == Pieces.Color.White != whiteTurn)
-                {
-                    // Update the stale array with stale positions for the opposite color
-                    staleArray = piece.checkForStale(chessBoard.board, staleArray);
-                }
-            }
-
-            // Check if the drag has ended
-            if (dragEnded)
-            {
-                // Calculate possible moves for the selected piece based on the chessboard and stale positions
-                if (selectedPiece is King)
-                {
-                    availableMoves = selectedPiece.calculatePossibleMoves(chessBoard.board, availableMoves, staleArray);
-                }
-                else
-                {
-                    availableMoves = selectedPiece.calculatePossibleMoves(chessBoard.board, availableMoves);
-                }
-
-                // Reset the drag flag, store the current position and turn, and remove invalid moves
-                dragEnded = false;
-                lastposition = selectedPiece.Position!;
-                lastTurn = whiteTurn;
-                removeInvalidMoves(selectedPiece);
-            }
-
-            // Check if the specified row and column are valid moves
-            return availableMoves[row, col];
-        }
 
         private async void pieceUpdated(MudItemDropInfo<Piece> piece)
         {
-            // Extract the new row and column from the dropzone identifier
-            int newRow = piece.DropzoneIdentifier[0] - '0';
-            int newCol = piece.DropzoneIdentifier[1] - '0';
-
-            // Check if the dropped piece captures another piece
-            bool isHitPiece = piecesOnBoard.Any(p => p.PieceValue != piece.Item!.PieceValue && p.Position == piece.DropzoneIdentifier);
-            int hitpieceValue = 0;
-            if (isHitPiece)
+            ChessGameService.movePiece(piece, gameHubService, gameName);
+            if (ChessGameService.checkForCheckmate())
             {
-                // Clear the position of the captured piece
-                Piece hitPiece = piecesOnBoard.First(p => p.Position == piece.DropzoneIdentifier);
-                hitPiece.Position = null;
-                hitpieceValue = hitPiece.PieceValue;
-            }
-
-            // Get the current position of the moved piece
-            (int oldRow, int oldCol) = piece.Item!.getPositionTuple();
-
-            //Store move
-            pieceChanges.Add(new PieceChange((oldRow, oldCol), (newRow, newCol), piece.Item.PieceValue, hitpieceValue));
-
-            // Set the piece on the chessboard to the new position
-            chessBoard.setPiece(newRow, newCol, piece.Item, piecesOnBoard);
-
-            // Set the dragEnded flag to true
-            dragEnded = true;
-
-            // Reset the available moves array
-            availableMoves = new bool[8, 8];
-
-            // Check if the game is in checkmate state
-            bool checkMate = CheckMate.isCheckMate(chessBoard.board, whiteTurn);
-
-            // Toggle the turn to the opposite player
-            whiteTurn = !whiteTurn;
-
-            // Check if it's the player's turn to handle the move
-            if (player.IsMyTurn)
-            {
-                // Handle the move asynchronously
-                await HandleMove(oldRow, oldCol, newRow, newCol);
-            }
-
-            // Toggle the turn for the player
-            player.IsMyTurn = !player.IsMyTurn;
-
-            // Check if the game is in a checkmate state
-            isStale = checkMate || Stale.staleChecker(chessBoard.board, whiteTurn);
-
-            // Check if the game is in checkmate state
-            if (checkMate)
-            {
-                // Show a message box with options to exit or play again
                 bool? result = await dialogService.ShowMessageBox(
                     "Sakkmatt",
                     "later",
                     yesText: "Exit!", cancelText: "Again");
 
-                if (result.HasValue && result.Value)
-                {
-                    // Perform necessary actions for exiting or starting a new game
-                    // InitGame();
-                    StateHasChanged();
-                }
-                ableToMove = false;
-            }
-        }
-
-        public void removeInvalidMoves(Piece piece)
-        {
-            (int row, int col) = piece.getPositionTuple();
-            // Iterate over each cell on the chessboard
-            for (int newRow = 0; newRow < 8; newRow++)
-            {
-                for (int newCol = 0; newCol < 8; newCol++)
-                {
-                    // Check if the piece can move into the current cell
-                    if (availableMoves[newRow, newCol])
+                    if (result.HasValue && result.Value)
                     {
-                        // Store the piece that might be captured in the destination cell
-                        Piece lastHitPiece = chessBoard.board[newRow, newCol];
-                        // Move the piece to the new cell and update its position
-                        chessBoard.board[newRow, newCol] = piece;
-                        chessBoard.board[newRow, newCol].setPosition($"{row}{col}", true);
-                        chessBoard.board[row, col].setPosition($"{newRow}{newCol}", true);
-
-                        // Replace the original cell with an empty piece
-                        chessBoard.board[row, col] = new EmptyPiece();
-
-                        // Check if the move leads to a stale for the player
-                        if (whiteTurn && Stale.staleChecker(chessBoard.board, whiteTurn))
-                        {
-                            // Mark the move as invalid
-                            availableMoves[newRow, newCol] = false;
-                        }
-                        if (!whiteTurn && Stale.staleChecker(chessBoard.board, whiteTurn))
-                        {
-                            // Mark the move as invalid
-                            availableMoves[newRow, newCol] = false;
-                        }
-
-                        // Restore the original positions and pieces on the chessboard
-                        chessBoard.board[newRow, newCol] = lastHitPiece;
-                        chessBoard.board[newRow, newCol].setPosition($"{newRow}{newCol}", true);
-                        chessBoard.board[row, col] = piece;
-                        chessBoard.board[row, col].setPosition($"{row}{col}", true);
+                        // Perform necessary actions for exiting or starting a new game
+                        // InitGame();
+                        //StateHasChanged();
                     }
-                }
             }
-        }
-
-        private string convertMoveToString(PieceChange pieceChange)
-        {
-            Dictionary<int, string> pieceMap = new Dictionary<int, string>
-            {
-                { 1, "" }, { 2, "r" }, { 3, "n" }, { 4, "b" },
-                { 5, "q" }, { 6, "k" }, { 11, "" }, { 12, "r" },
-                { 13, "n" }, { 14, "b" }, { 15, "q" }, { 16, "k" }
-            };
-
-            Dictionary<int, string> fileMap = new Dictionary<int, string>
-            {
-                { 0, "a" }, { 1, "b" }, { 2, "c" }, { 3, "d" },
-                { 4, "e" }, { 5, "f" }, { 6, "g" }, { 7, "h" }
-            };
-
-            Dictionary<int, string> rankMap = new Dictionary<int, string>
-            {
-                { 0, "1" }, { 1, "2" }, { 2, "3" }, { 3, "4" },
-                { 4, "5" }, { 5, "6" }, { 6, "7" }, { 7, "8" }
-            };
-
-            int rowIndex = 7 - pieceChange.toMove.row;
-            int colIndex = pieceChange.toMove.col;
-
-            string isHit = pieceChange.hitPiece == 0 ? "" : "x";
-            string piece = pieceMap[pieceChange.movedPieceValue];
-            piece = pieceChange.hitPiece != 0 && string.IsNullOrEmpty(piece) ? fileMap[pieceChange.fromMove.col] : piece;
-            string row = rankMap[rowIndex];
-            string col = fileMap[colIndex];
-
-            return piece + isHit + col + row;
+            
         }
 
         private async Task joinGame()
@@ -293,112 +70,101 @@ namespace BlazorChess.Pages
             string uniqueGuid = await localStorage.GetItemAsync<string>("uniqueGuid");
 
             // Join the new game
-            await hubConnection.SendAsync("joinGame", gameName);
+            await gameHubService.joinGameAsync(gameName);
 
             Dictionary<string, List<string>> connectedPlayers = userHandler.getConnectedPlayers();
-            var matchInfos = userHandler.getMatchInfos();
+            Dictionary<string, MatchInfo> matchInfos = userHandler.getMatchInfos();
 
             // Check if there are already connected players for the game
             if (connectedPlayers.ContainsKey(gameName))
             {
-                if (connectedPlayers[gameName].Count > 1 && !connectedPlayers[gameName].Contains(uniqueGuid))
-                {
-                    navigationManager.NavigateTo("/");
-                    return;
-                }
-                // Check if the current player is already connected to the game
-                if (connectedPlayers[gameName].Contains(uniqueGuid))
-                {
-                    // The player is refreshing or renavigating
-                    // Update the chessboard, pieces list, and player turn
-                    chessBoard.board = userHandler.getMatchInfoBoard(gameName);
-                    pieceChanges = userHandler.getMatchInfoMoves(gameName);
-                    piecesOnBoard = chessBoard.board.Cast<Piece>().ToList();
-                    bool isWhitePlayer = connectedPlayers[gameName].First() == uniqueGuid;
-
-                    if (connectedPlayers[gameName].Count == 2)
-                    {
-                        ableToMove = true;
-                    }
-
-                    player.IsMyTurn = isWhitePlayer == matchInfos[gameName].isWhiteTurn;
-                    player.isWhitePlayer = isWhitePlayer;
-                    whiteTurn = matchInfos[gameName].isWhiteTurn;
-                    StateHasChanged();
-                    _container.Refresh();
-                }
-                else
-                {
-                    // The second player has connected
-                    // Add the current player to the connected players list and set the turn to false
-                    connectedPlayers[gameName].Add(uniqueGuid);
-                    player.IsMyTurn = false;
-                    player.isWhitePlayer = false;
-                    ableToMove = true;
-                    await hubConnection.SendAsync("startGame", gameName);
-                }
+                handleExistingPlayer(connectedPlayers, matchInfos, uniqueGuid);
             }
             else
             {
-                // First player to connect to the game
-                // Create new entries for connected players and match information
-                connectedPlayers.Add(gameName, new List<string>() { uniqueGuid });
-                matchInfos.Add(gameName, new MatchInfo());
-                player.IsMyTurn = true;
-                player.isWhitePlayer = true;
+                handleNewPlayer(connectedPlayers, matchInfos, uniqueGuid);
+            }
+        }
+        private async void handleExistingPlayer(Dictionary<string, List<string>> connectedPlayers, Dictionary<string, MatchInfo> matchInfos, string uniqueGuid)
+        {
+            if (connectedPlayers[gameName].Count > 1 && !connectedPlayers[gameName].Contains(uniqueGuid))
+            {
+                navigationManager.NavigateTo("/");
+                return;
+            }
+            // Check if the current player is already connected to the game
+            if (connectedPlayers[gameName].Contains(uniqueGuid))
+            {
+                // The player is refreshing or renavigating
+                // Update the chessboard, pieces list, and player turn
+                ChessGameService.chessBoard.board = userHandler.getMatchInfoBoard(gameName);
+                ChessGameService.pieceChanges = userHandler.getMatchInfoMoves(gameName);
+                ChessGameService.piecesOnBoard = ChessGameService.chessBoard.board.Cast<Piece>().ToList();
+                bool isWhitePlayer = connectedPlayers[gameName].First() == uniqueGuid;
+
+                if (connectedPlayers[gameName].Count == 2)
+                {
+                    ChessGameService.ableToMove = true;
+                }
+
+                ChessGameService.player.IsMyTurn = isWhitePlayer == matchInfos[gameName].isWhiteTurn;
+                ChessGameService.player.isWhitePlayer = isWhitePlayer;
+                ChessGameService.whiteTurn = matchInfos[gameName].isWhiteTurn;
+                StateHasChanged();
+                ChessGameService._container.Refresh();
+            }
+            else
+            {
+                // The second player has connected
+                // Add the current player to the connected players list and set the turn to false
+                connectedPlayers[gameName].Add(uniqueGuid);
+                ChessGameService.player.IsMyTurn = false;
+                ChessGameService.player.isWhitePlayer = false;
+                ChessGameService.ableToMove = true;
+                await gameHubService.startGameAsync(gameName);
+            }
+        }
+        
+        private void handleNewPlayer(Dictionary<string, List<string>> connectedPlayers, Dictionary<string, MatchInfo> matchInfos, string uniqueGuid)
+        {
+            // First player to connect to the game
+            // Create new entries for connected players and match information
+            connectedPlayers.Add(gameName, new List<string>() { uniqueGuid });
+            matchInfos.Add(gameName, new MatchInfo());
+            ChessGameService.player.IsMyTurn = true;
+            ChessGameService.player.isWhitePlayer = true;
+        }
+        private void handleMoveReceived(int fromX, int fromY, int toX, int toY)
+        {
+            if (!ChessGameService.player.IsMyTurn)
+            {
+                // Create a MudItemDropInfo object representing the received move
+                MudItemDropInfo<Piece> piece = new MudItemDropInfo<Piece>(ChessGameService.piecesOnBoard.First(x => x.Position == $"{fromX}{fromY}"), $"{toX}{toY}", -1);
+
+                // Handle the received move
+                pieceUpdated(piece);
+
+                // Update the chess board UI
+                ChessGameService._container.Refresh();
+                StateHasChanged();
             }
         }
 
-        private async Task HandleMove(int fromRow, int fromCol, int toRow, int toCol)
+        private void handleJoined()
         {
-            // Send a move piece request to the hub with the game name and coordinates of the move
-            await hubConnection.SendAsync("movePiece", gameName, fromRow, fromCol, toRow, toCol);
-        }
-
-        private string getCellCss(int index)
-        {
-            string backgroundColor = index % 2 == 0 ? "#eeeed2" : "#769656";
-            return "height:10vw; width:10vh; max-height: 64px; max-width: 64px; background-color:" + backgroundColor;
-        }
-
-        private string getPlayerTableView()
-        {
-            Dictionary<string, List<string>> connectedPlayers = userHandler.getConnectedPlayers();
-
-            if (connectedPlayers.ContainsKey(gameName) && connectedPlayers[gameName].Count == 1)
-            {
-                return "";
-            }
-            if (connectedPlayers.ContainsKey(gameName) && connectedPlayers[gameName].Count == 2)
-            {
-                return player.isWhitePlayer ? "" : "transform: rotate(180deg);";
-            }
-            return "transform: rotate(180deg);";
-        }
-
-        private string getPlayerPieceView()
-        {
-            Dictionary<string, List<string>> connectedPlayers = userHandler.getConnectedPlayers();
-
-            if (connectedPlayers.ContainsKey(gameName) && connectedPlayers[gameName].Count == 1)
-            {
-                return "transform: rotate(180deg);";
-            }
-            else if (connectedPlayers.ContainsKey(gameName) && connectedPlayers[gameName].Count == 2)
-            {
-                return player.isWhitePlayer ? "" : "transform: rotate(180deg);";
-            }
-            return "";
+            ChessGameService.ableToMove = true;
         }
 
         // Implementation of the IDisposable interface to perform cleanup when the object is disposed
         public async void Dispose()
         {
             // Update the match information with the current state of the chessboard
-            userHandler.setMatchInfoBoard(gameName, chessBoard.board);
-            userHandler.setMatchInfoMoves(gameName, pieceChanges, whiteTurn);
-            await hubConnection.SendAsync("leaveGame", gameName);
+            userHandler.setMatchInfoBoard(gameName, ChessGameService.chessBoard.board);
+            userHandler.setMatchInfoMoves(gameName, ChessGameService.pieceChanges, ChessGameService.whiteTurn);
+            gameHubService.OnMoveReceived -= handleMoveReceived;
+            gameHubService.OnJoined -= handleJoined;
+            await gameHubService.leaveGameAsync(gameName);
+            await gameHubService.stopAsync();
         }
-
     }
 }
