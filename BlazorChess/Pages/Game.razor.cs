@@ -46,11 +46,11 @@ namespace BlazorChess.Pages
         {
             // Convert the chessboard pieces to a list for UI component
             piecesOnBoard = chessBoard.board.Cast<Piece>().ToList();
-
             // Create a new hub connection for the chess game
             hubConnection = new HubConnectionBuilder()
-                .WithUrl(navigationManager!.ToAbsoluteUri("/chessHub"))
+                //.WithUrl(navigationManager!.ToAbsoluteUri("/chessHub"))
                 //.WithUrl("http://localhost/chessHub")
+                .WithUrl("https://localhost:44355/chessHub")
                 .Build();
 
             // Start the hub connection
@@ -358,7 +358,7 @@ namespace BlazorChess.Pages
         private string getCellCss(int index)
         {
             string backgroundColor = index % 2 == 0 ? "#eeeed2" : "#769656";
-            return "height:64px; width:64px; background-color:" + backgroundColor;
+            return "height:10vw; width:10vh; max-height: 64px; max-width: 64px; background-color:" + backgroundColor;
         }
 
         private string getPlayerTableView()

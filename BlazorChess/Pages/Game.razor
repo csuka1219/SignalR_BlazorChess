@@ -4,7 +4,7 @@
 
 <MudGrid>
     <MudItem Style="@getPlayerTableView()" xs="12" sm="12" md="6" lg="6" xl="6" xxl="6">
-        <MudDropContainer T="Piece" Style="max-width: 515px;" @ref="_container" Items="@piecesOnBoard" CanDropClass="mud-border-info" NoDropClass="mud-border-error"
+        <MudDropContainer T="Piece" Style="max-width: 515px; margin: auto auto;" @ref="_container" Items="@piecesOnBoard" CanDropClass="mud-border-info" NoDropClass="mud-border-error"
                           CanDrop="@( (item,identifier ) => canDrop(item,identifier))"
             ItemsSelector="@((item,dropzone) => item.Position == dropzone)" ItemDropped="pieceUpdated" 
             Class="border-2 border-solid mud-border-lines-default">
@@ -23,7 +23,7 @@
             </ChildContent>
             <ItemRenderer>
                 <div class="d-flex justify-center align-center flex-grow-1" style="@getPlayerPieceView()">
-                    <img src="@context.Icon" style="width: 60px; padding-top: 5px;" alt="Icon" />
+                    <img src="@context.Icon" style="width: 100%; padding-top: 5px;" alt="Icon" />
 
                 </div>
             </ItemRenderer>
