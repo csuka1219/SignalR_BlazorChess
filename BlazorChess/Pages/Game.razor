@@ -4,7 +4,7 @@
 
 <MudGrid>
     <MudItem Style="@getPlayerTableView()" xs="12" sm="12" md="6" lg="6" xl="6" xxl="6">
-        <MudDropContainer T="Piece" Style="max-width: 515px;" @ref="_container" Items="@list" CanDropClass="mud-border-info" NoDropClass="mud-border-error"
+        <MudDropContainer T="Piece" Style="max-width: 515px;" @ref="_container" Items="@piecesOnBoard" CanDropClass="mud-border-info" NoDropClass="mud-border-error"
                           CanDrop="@( (item,identifier ) => canDrop(item,identifier))"
             ItemsSelector="@((item,dropzone) => item.Position == dropzone)" ItemDropped="pieceUpdated" 
             Class="border-2 border-solid mud-border-lines-default">

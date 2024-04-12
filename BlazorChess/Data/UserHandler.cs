@@ -6,7 +6,7 @@ using System.Text;
 
 namespace BlazorChess.Data
 {
-    public class UserHandler
+    public class UserHandler : IUserHandler
     {
         public Dictionary<string, List<string>> connectedPlayers = new Dictionary<string, List<string>>();
         public Dictionary<string, MatchInfo> matchInfos = new Dictionary<string, MatchInfo>();
@@ -134,19 +134,15 @@ namespace BlazorChess.Data
                     return new EmptyPiece();
             }
         }
-    }
-}
 
-public class MatchInfo
-{
-    public List<PieceChange> pieceChanges { get; set; }
-    public string boardInfo { get; set; }
-    public bool isWhiteTurn { get; set; }
-        
-    public MatchInfo() 
-    {
-        pieceChanges = new List<PieceChange>();
-        boardInfo = string.Empty;
-        isWhiteTurn = true;
+        public Dictionary<string, List<string>> getConnectedPlayers()
+        {
+            return connectedPlayers;
+        }
+
+        public Dictionary<string, MatchInfo> getMatchInfos()
+        {
+            return matchInfos;
+        }
     }
 }

@@ -8,13 +8,13 @@ namespace BlazorChess.Pages
     public partial class Index
     {
         [Inject]
-        private NavigationManager navigationManager { get; set; }
+        private NavigationManager navigationManager { get; set; } = default!;
 
         [Inject]
-        private IDialogService? dialogService { get; set; }
+        private IDialogService dialogService { get; set; } = default!;
 
         [Inject]
-        private UserHandler userHandler { get; set; }
+        private IUserHandler userHandler { get; set; } = default!;
 
         private string searchString = "";
         private List<string> games = new List<string>();
@@ -32,7 +32,7 @@ namespace BlazorChess.Pages
 
         private async void createGame()
         {
-            await dialogService!.ShowAsync<CreateGameDialog>("Create");
+            await dialogService.ShowAsync<CreateGameDialog>("Create");
         }
 
         private bool lobbyFilter(string element)
@@ -46,7 +46,7 @@ namespace BlazorChess.Pages
 
         private void rowClickEvent(TableRowClickEventArgs<string> tableRowClickEventArgs)
         {
-            navigationManager!.NavigateTo("game/" + tableRowClickEventArgs.Item);
+            navigationManager.NavigateTo("game/" + tableRowClickEventArgs.Item);
         }
     }
 }

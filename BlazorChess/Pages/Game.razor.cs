@@ -12,24 +12,24 @@ namespace BlazorChess.Pages
     public partial class Game : IDisposable
     {
         [Inject]
-        private ILocalStorageService localStorage { get; set; }
+        private ILocalStorageService localStorage { get; set; } = default!;
 
         [Inject] 
-        private IDialogService? dialogService { get; set; }
-
-		[Inject]
-		private NavigationManager? navigationManager { get; set; }
+        private IDialogService dialogService { get; set; } = default!;
 
         [Inject]
-        private UserHandler userHandler { get; set; }
+		private NavigationManager navigationManager { get; set; } = default!;
+
+        [Inject]
+        private IUserHandler userHandler { get; set; } = default!;
 
         [Parameter]
         public string gameName { get; set; } = string.Empty;
 
         private Chessboard chessBoard = new Chessboard();
         private Player player = new Player();
-        IEnumerable<Piece> list = new List<Piece>();
-        private MudDropContainer<Piece> _container;
+        IEnumerable<Piece> piecesOnBoard = new List<Piece>();
+        private MudDropContainer<Piece> _container = default!;
         private List<PieceChange> pieceChanges = new List<PieceChange>();
 
         bool[,] availableMoves = new bool[8, 8];
@@ -40,17 +40,17 @@ namespace BlazorChess.Pages
 		bool dragEnded = true;
         public string lastposition = "";
 
-        private HubConnection hubConnection;
+        private HubConnection hubConnection = default!;
 
         protected override async Task OnInitializedAsync()
         {
             // Convert the chessboard pieces to a list for UI component
-            list = chessBoard.board.Cast<Piece>().ToList();
+            piecesOnBoard = chessBoard.board.Cast<Piece>().ToList();
 
             // Create a new hub connection for the chess game
             hubConnection = new HubConnectionBuilder()
-                //.WithUrl(navigationManager!.ToAbsoluteUri("/chessHub"))
-                .WithUrl("http://localhost/chessHub")
+                .WithUrl(navigationManager!.ToAbsoluteUri("/chessHub"))
+                //.WithUrl("http://localhost/chessHub")
                 .Build();
 
             // Start the hub connection
@@ -63,7 +63,7 @@ namespace BlazorChess.Pages
                 if (!player.IsMyTurn)
                 {
                     // Create a MudItemDropInfo object representing the received move
-                    MudItemDropInfo<Piece> piece = new MudItemDropInfo<Piece>(list.First(x => x.Position == $"{fromX}{fromY}"), $"{toX}{toY}", -1);
+                    MudItemDropInfo<Piece> piece = new MudItemDropInfo<Piece>(piecesOnBoard.First(x => x.Position == $"{fromX}{fromY}"), $"{toX}{toY}", -1);
 
                     // Handle the received move
                     pieceUpdated(piece);
@@ -148,12 +148,12 @@ namespace BlazorChess.Pages
             int newCol = piece.DropzoneIdentifier[1] - '0';
 
             // Check if the dropped piece captures another piece
-            bool isHitPiece = list.Any(p => p.PieceValue != piece.Item!.PieceValue && p.Position == piece.DropzoneIdentifier);
+            bool isHitPiece = piecesOnBoard.Any(p => p.PieceValue != piece.Item!.PieceValue && p.Position == piece.DropzoneIdentifier);
             int hitpieceValue = 0;
             if (isHitPiece)
             {
                 // Clear the position of the captured piece
-                Piece hitPiece = list.First(p => p.Position == piece.DropzoneIdentifier);
+                Piece hitPiece = piecesOnBoard.First(p => p.Position == piece.DropzoneIdentifier);
                 hitPiece.Position = null;
                 hitpieceValue = hitPiece.PieceValue;
             }
@@ -165,7 +165,7 @@ namespace BlazorChess.Pages
             pieceChanges.Add(new PieceChange((oldRow, oldCol), (newRow, newCol), piece.Item.PieceValue, hitpieceValue));
 
             // Set the piece on the chessboard to the new position
-            chessBoard.setPiece(newRow, newCol, piece.Item, list);
+            chessBoard.setPiece(newRow, newCol, piece.Item, piecesOnBoard);
 
             // Set the dragEnded flag to true
             dragEnded = true;
@@ -196,7 +196,7 @@ namespace BlazorChess.Pages
             if (checkMate)
             {
                 // Show a message box with options to exit or play again
-                bool? result = await dialogService!.ShowMessageBox(
+                bool? result = await dialogService.ShowMessageBox(
                     "Sakkmatt",
                     "later",
                     yesText: "Exit!", cancelText: "Again");
@@ -295,32 +295,35 @@ namespace BlazorChess.Pages
             // Join the new game
             await hubConnection.SendAsync("joinGame", gameName);
 
+            Dictionary<string, List<string>> connectedPlayers = userHandler.getConnectedPlayers();
+            var matchInfos = userHandler.getMatchInfos();
+
             // Check if there are already connected players for the game
-            if (userHandler.connectedPlayers.ContainsKey(gameName))
+            if (connectedPlayers.ContainsKey(gameName))
             {
-                if (userHandler.connectedPlayers[gameName].Count > 1 && !userHandler.connectedPlayers[gameName].Contains(uniqueGuid))
+                if (connectedPlayers[gameName].Count > 1 && !connectedPlayers[gameName].Contains(uniqueGuid))
                 {
-                    navigationManager!.NavigateTo("/");
+                    navigationManager.NavigateTo("/");
                     return;
                 }
                 // Check if the current player is already connected to the game
-                if (userHandler.connectedPlayers[gameName].Contains(uniqueGuid))
+                if (connectedPlayers[gameName].Contains(uniqueGuid))
                 {
                     // The player is refreshing or renavigating
                     // Update the chessboard, pieces list, and player turn
                     chessBoard.board = userHandler.getMatchInfoBoard(gameName);
                     pieceChanges = userHandler.getMatchInfoMoves(gameName);
-                    list = chessBoard.board.Cast<Piece>().ToList();
-                    bool isWhitePlayer = userHandler.connectedPlayers[gameName].First() == uniqueGuid;
+                    piecesOnBoard = chessBoard.board.Cast<Piece>().ToList();
+                    bool isWhitePlayer = connectedPlayers[gameName].First() == uniqueGuid;
 
-                    if (userHandler.connectedPlayers[gameName].Count == 2)
+                    if (connectedPlayers[gameName].Count == 2)
                     {
                         ableToMove = true;
                     }
 
-                    player.IsMyTurn = isWhitePlayer == userHandler.matchInfos[gameName].isWhiteTurn;
+                    player.IsMyTurn = isWhitePlayer == matchInfos[gameName].isWhiteTurn;
                     player.isWhitePlayer = isWhitePlayer;
-                    whiteTurn = userHandler.matchInfos[gameName].isWhiteTurn;
+                    whiteTurn = matchInfos[gameName].isWhiteTurn;
                     StateHasChanged();
                     _container.Refresh();
                 }
@@ -328,7 +331,7 @@ namespace BlazorChess.Pages
                 {
                     // The second player has connected
                     // Add the current player to the connected players list and set the turn to false
-                    userHandler.connectedPlayers[gameName].Add(uniqueGuid);
+                    connectedPlayers[gameName].Add(uniqueGuid);
                     player.IsMyTurn = false;
                     player.isWhitePlayer = false;
                     ableToMove = true;
@@ -339,8 +342,8 @@ namespace BlazorChess.Pages
             {
                 // First player to connect to the game
                 // Create new entries for connected players and match information
-                userHandler.connectedPlayers.Add(gameName, new List<string>() { uniqueGuid });
-                userHandler.matchInfos.Add(gameName, new MatchInfo());
+                connectedPlayers.Add(gameName, new List<string>() { uniqueGuid });
+                matchInfos.Add(gameName, new MatchInfo());
                 player.IsMyTurn = true;
                 player.isWhitePlayer = true;
             }
@@ -360,26 +363,30 @@ namespace BlazorChess.Pages
 
         private string getPlayerTableView()
         {
-            if (userHandler.connectedPlayers.ContainsKey(gameName) && userHandler.connectedPlayers[gameName].Count == 1)
+            Dictionary<string, List<string>> connectedPlayers = userHandler.getConnectedPlayers();
+
+            if (connectedPlayers.ContainsKey(gameName) && connectedPlayers[gameName].Count == 1)
             {
                 return "";
             }
-            if (userHandler.connectedPlayers.ContainsKey(gameName) && userHandler.connectedPlayers[gameName].Count == 2)
+            if (connectedPlayers.ContainsKey(gameName) && connectedPlayers[gameName].Count == 2)
             {
-                return player.isWhitePlayer ? "" : "transform: scaleY(-1);";
+                return player.isWhitePlayer ? "" : "transform: rotate(180deg);";
             }
-            return "transform: scaleY(-1);";
+            return "transform: rotate(180deg);";
         }
 
         private string getPlayerPieceView()
         {
-            if (userHandler.connectedPlayers.ContainsKey(gameName) && userHandler.connectedPlayers[gameName].Count == 1)
+            Dictionary<string, List<string>> connectedPlayers = userHandler.getConnectedPlayers();
+
+            if (connectedPlayers.ContainsKey(gameName) && connectedPlayers[gameName].Count == 1)
             {
-                return "transform: scaleY(-1);";
+                return "transform: rotate(180deg);";
             }
-            else if (userHandler.connectedPlayers.ContainsKey(gameName) && userHandler.connectedPlayers[gameName].Count == 2)
+            else if (connectedPlayers.ContainsKey(gameName) && connectedPlayers[gameName].Count == 2)
             {
-                return player.isWhitePlayer ? "" : "transform: scaleY(-1);";
+                return player.isWhitePlayer ? "" : "transform: rotate(180deg);";
             }
             return "";
         }
