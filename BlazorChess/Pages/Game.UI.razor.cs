@@ -19,7 +19,7 @@
             }
             if (connectedPlayers.ContainsKey(gameName) && connectedPlayers[gameName].Count == 2)
             {
-                return ChessGameService.player.isWhitePlayer ? "" : "transform: rotate(180deg);";
+                return chessGameService.player.isWhitePlayer ? "" : "transform: rotate(180deg);";
             }
             return "transform: rotate(180deg);";
         }
@@ -28,15 +28,18 @@
         {
             Dictionary<string, List<string>> connectedPlayers = userHandler.getConnectedPlayers();
 
-            if (connectedPlayers.ContainsKey(gameName) && connectedPlayers[gameName].Count == 1)
+            if (!connectedPlayers.ContainsKey(gameName)) return string.Empty;
+            switch (connectedPlayers[gameName].Count)
             {
-                return "transform: rotate(180deg);";
+                case 0:
+                    return string.Empty;
+                case 1:
+                case 2:
+                    return chessGameService.player.isWhitePlayer ? "" : "transform: rotate(180deg);";
+                default:
+                    return string.Empty;
             }
-            else if (connectedPlayers.ContainsKey(gameName) && connectedPlayers[gameName].Count == 2)
-            {
-                return ChessGameService.player.isWhitePlayer ? "" : "transform: rotate(180deg);";
-            }
-            return "";
+
         }
     }
 

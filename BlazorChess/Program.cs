@@ -16,8 +16,6 @@ builder.Services.AddSignalR();
 builder.Services.AddBlazoredLocalStorage();
 
 builder.Services.AddSingleton<IUserHandler,UserHandler>();
-builder.Services.AddScoped<ChessGameService>();
-builder.Services.AddScoped<GameHubService>();
 
 var app = builder.Build();
 

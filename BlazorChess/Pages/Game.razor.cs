@@ -25,17 +25,17 @@ namespace BlazorChess.Pages
         [Inject]
         private IUserHandler userHandler { get; set; } = default!;
 
-        [Inject]
-        private GameHubService gameHubService { get; set; } = default!;
+        private GameHubService gameHubService = default!;
 
-        [Inject]
-        private ChessGameService ChessGameService { get; set; } = default!;
+        private ChessGameService chessGameService = default!;
 
         [Parameter]
         public string gameName { get; set; } = string.Empty;
 
         protected override async Task OnInitializedAsync()
         {
+            gameHubService = new GameHubService(navigationManager);
+            chessGameService = new ChessGameService();
             // Create a new hub connection for the chess game
             gameHubService.OnMoveReceived += handleMoveReceived;
             gameHubService.OnJoined += handleJoined;
@@ -46,8 +46,8 @@ namespace BlazorChess.Pages
 
         private async void pieceUpdated(MudItemDropInfo<Piece> piece)
         {
-            ChessGameService.movePiece(piece, gameHubService, gameName);
-            if (ChessGameService.checkForCheckmate())
+            chessGameService.movePiece(piece, gameHubService, gameName);
+            if (chessGameService.checkForCheckmate())
             {
                 bool? result = await dialogService.ShowMessageBox(
                     "Sakkmatt",
@@ -97,30 +97,30 @@ namespace BlazorChess.Pages
             {
                 // The player is refreshing or renavigating
                 // Update the chessboard, pieces list, and player turn
-                ChessGameService.chessBoard.board = userHandler.getMatchInfoBoard(gameName);
-                ChessGameService.pieceChanges = userHandler.getMatchInfoMoves(gameName);
-                ChessGameService.piecesOnBoard = ChessGameService.chessBoard.board.Cast<Piece>().ToList();
+                chessGameService.chessBoard.board = userHandler.getMatchInfoBoard(gameName);
+                chessGameService.pieceChanges = userHandler.getMatchInfoMoves(gameName);
+                chessGameService.piecesOnBoard = chessGameService.chessBoard.board.Cast<Piece>().ToList();
                 bool isWhitePlayer = connectedPlayers[gameName].First() == uniqueGuid;
 
                 if (connectedPlayers[gameName].Count == 2)
                 {
-                    ChessGameService.ableToMove = true;
+                    chessGameService.ableToMove = true;
                 }
 
-                ChessGameService.player.IsMyTurn = isWhitePlayer == matchInfos[gameName].isWhiteTurn;
-                ChessGameService.player.isWhitePlayer = isWhitePlayer;
-                ChessGameService.whiteTurn = matchInfos[gameName].isWhiteTurn;
+                chessGameService.player.IsMyTurn = isWhitePlayer == matchInfos[gameName].isWhiteTurn;
+                chessGameService.player.isWhitePlayer = isWhitePlayer;
+                chessGameService.whiteTurn = matchInfos[gameName].isWhiteTurn;
                 StateHasChanged();
-                ChessGameService._container.Refresh();
+                chessGameService._container.Refresh();
             }
             else
             {
                 // The second player has connected
                 // Add the current player to the connected players list and set the turn to false
                 connectedPlayers[gameName].Add(uniqueGuid);
-                ChessGameService.player.IsMyTurn = false;
-                ChessGameService.player.isWhitePlayer = false;
-                ChessGameService.ableToMove = true;
+                chessGameService.player.IsMyTurn = false;
+                chessGameService.player.isWhitePlayer = false;
+                chessGameService.ableToMove = true;
                 await gameHubService.startGameAsync(gameName);
             }
         }
@@ -131,36 +131,36 @@ namespace BlazorChess.Pages
             // Create new entries for connected players and match information
             connectedPlayers.Add(gameName, new List<string>() { uniqueGuid });
             matchInfos.Add(gameName, new MatchInfo());
-            ChessGameService.player.IsMyTurn = true;
-            ChessGameService.player.isWhitePlayer = true;
+            chessGameService.player.IsMyTurn = true;
+            chessGameService.player.isWhitePlayer = true;
         }
         private void handleMoveReceived(int fromX, int fromY, int toX, int toY)
         {
-            if (!ChessGameService.player.IsMyTurn)
+            if (!chessGameService.player.IsMyTurn)
             {
                 // Create a MudItemDropInfo object representing the received move
-                MudItemDropInfo<Piece> piece = new MudItemDropInfo<Piece>(ChessGameService.piecesOnBoard.First(x => x.Position == $"{fromX}{fromY}"), $"{toX}{toY}", -1);
+                MudItemDropInfo<Piece> piece = new MudItemDropInfo<Piece>(chessGameService.piecesOnBoard.First(x => x.Position == $"{fromX}{fromY}"), $"{toX}{toY}", -1);
 
                 // Handle the received move
                 pieceUpdated(piece);
 
                 // Update the chess board UI
-                ChessGameService._container.Refresh();
+                chessGameService._container.Refresh();
                 StateHasChanged();
             }
         }
 
         private void handleJoined()
         {
-            ChessGameService.ableToMove = true;
+            chessGameService.ableToMove = true;
         }
 
         // Implementation of the IDisposable interface to perform cleanup when the object is disposed
         public async void Dispose()
         {
             // Update the match information with the current state of the chessboard
-            userHandler.setMatchInfoBoard(gameName, ChessGameService.chessBoard.board);
-            userHandler.setMatchInfoMoves(gameName, ChessGameService.pieceChanges, ChessGameService.whiteTurn);
+            userHandler.setMatchInfoBoard(gameName, chessGameService.chessBoard.board);
+            userHandler.setMatchInfoMoves(gameName, chessGameService.pieceChanges, chessGameService.whiteTurn);
             gameHubService.OnMoveReceived -= handleMoveReceived;
             gameHubService.OnJoined -= handleJoined;
             await gameHubService.leaveGameAsync(gameName);
